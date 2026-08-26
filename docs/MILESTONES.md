@@ -17,7 +17,7 @@ a receipt without installing application dependencies.
 ## Milestone 2 - Public evidence checks (26-31 August)
 
 - GitHub commit existence and repository metadata checks.
-- Solana transaction/program-account verification through read-only RPC.
+- Solana transaction/executable-program verification through read-only RPC.
 - Demo availability check with explicit failure and unsupported states.
 - Verified-build integration spike and threat-model document.
 

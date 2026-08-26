@@ -101,7 +101,7 @@ export async function createReviewerBundle({
   } catch (error) {
     if (error?.code === "EEXIST")
       throw new Error(
-        `Bundle output directory must be empty or absent: ${outDir}`,
+        `Bundle output directory must not already exist: ${outDir}`,
       );
     throw error;
   }

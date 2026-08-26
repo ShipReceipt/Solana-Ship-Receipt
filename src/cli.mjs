@@ -249,9 +249,11 @@ try {
       projectTitle: "Solana Ship Receipt",
       projectDescription:
         "A sample provenance receipt for testing the verifier.",
-      repositoryUrl: "https://github.com/hogyzen12/unruggable",
-      commit: "3e5806c668b99b28b6201bea08510ae36fdb67d2",
+      repositoryUrl: "https://github.com/coral-xyz/anchor",
+      commit: "db4c9d645c82d7186bfe91a43d845f83d95b1d92",
       cluster: "devnet",
+      createdAt: "2026-08-23T00:00:00.000Z",
+      receiptId: "00000000-0000-4000-8000-000000000002",
     });
     await writeJsonExclusive(out, createEnvelope(payload));
     console.log(`Created ${out}`);

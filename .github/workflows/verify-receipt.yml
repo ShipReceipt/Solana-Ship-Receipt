@@ -47,6 +47,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       TITLE: ${{ inputs.title }}
       DESCRIPTION: ${{ inputs.description }}
@@ -59,11 +60,16 @@ jobs:
     steps:
       - name: Check out verifier
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
+
+      - name: Check source syntax
+        run: npm run check:syntax
 
       - name: Run verifier tests
         run: npm test

@@ -190,6 +190,57 @@ test("network checks compare GitHub SHA and distinguish an absent account", asyn
   assert.equal(calls.length, 2);
 });
 
+test("program verification requires an executable account", async () => {
+  const payload = createPayload({
+    projectTitle: "Executable program evidence",
+    projectDescription:
+      "A project used to distinguish executable programs from ordinary accounts.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    programId: encodeBase58(Buffer.alloc(32, 8)),
+  });
+  const lookupImpl = async () => [{ address: "93.184.216.34", family: 4 }];
+  const verifyProgram = (executable) =>
+    verifyNetwork(createEnvelope(payload), {
+      lookupImpl,
+      fetchImpl: async (url) =>
+        url.includes("api.github.com")
+          ? {
+              ok: true,
+              status: 200,
+              json: async () => ({ sha: payload.repository.commit }),
+            }
+          : {
+              ok: true,
+              status: 200,
+              json: async () => ({
+                result: {
+                  value: {
+                    executable,
+                    lamports: 1,
+                    owner: encodeBase58(Buffer.alloc(32, 9)),
+                  },
+                },
+              }),
+            },
+    });
+
+  const ordinaryAccount = await verifyProgram(false);
+  const ordinaryCheck = ordinaryAccount.find(
+    (check) => check.name === "solana_state",
+  );
+  assert.equal(ordinaryCheck.status, "failed");
+  assert.equal(ordinaryCheck.details.executable, false);
+  assert.match(ordinaryCheck.message, /executable program account/i);
+
+  const executableProgram = await verifyProgram(true);
+  const executableCheck = executableProgram.find(
+    (check) => check.name === "solana_state",
+  );
+  assert.equal(executableCheck.status, "verified");
+  assert.equal(executableCheck.details.executable, true);
+});
+
 test("demo verification falls back from HEAD to GET when HEAD is unsupported", async () => {
   const payload = createPayload({
     projectTitle: "Demo fallback",
@@ -458,6 +509,9 @@ test("GitHub Actions workflow exposes a reproducible network verification job", 
   );
   assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v4/);
   assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /timeout-minutes: 10/);
+  assert.match(workflow, /npm run check:syntax/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /node src\/cli\.mjs create/);
   assert.match(workflow, /node src\/cli\.mjs verify/);
@@ -479,8 +533,56 @@ test("CI runs tests and package checks across supported Node versions", async ()
   assert.match(workflow, /node-version:\s*\n\s*- 20\s*\n\s*- 22\s*\n\s*- 24/);
   assert.match(workflow, /actions\/checkout@[0-9a-f]{40} # v4/);
   assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /timeout-minutes: 10/);
+  assert.match(workflow, /npm run check:syntax/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /npm pack --dry-run --json/);
+});
+
+test("package metadata exposes the canonical repository and quality gate", async () => {
+  const packageMetadata = JSON.parse(
+    await readFile(join(process.cwd(), "package.json"), "utf8"),
+  );
+  assert.equal(
+    packageMetadata.repository.url,
+    "git+https://github.com/ShipReceipt/Solana-Ship-Receipt.git",
+  );
+  assert.equal(
+    packageMetadata.homepage,
+    "https://github.com/ShipReceipt/Solana-Ship-Receipt#readme",
+  );
+  assert.match(packageMetadata.scripts.check, /check:syntax/);
+  assert.match(packageMetadata.scripts.check, /npm test/);
+  assert.match(packageMetadata.scripts.check, /npm pack --dry-run --json/);
+});
+
+test("GitHub verification normalizes a case-insensitive clone suffix", async () => {
+  const payload = createPayload({
+    projectTitle: "Clone URL normalization",
+    projectDescription:
+      "A project used to normalize GitHub clone suffixes before API verification.",
+    repositoryUrl: "https://github.com/example/project.GIT",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  let requestedUrl;
+  const checks = await verifyNetwork(createEnvelope(payload), {
+    lookupImpl: async () => [{ address: "93.184.216.34", family: 4 }],
+    fetchImpl: async (url) => {
+      requestedUrl = url;
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ sha: payload.repository.commit }),
+      };
+    },
+  });
+  assert.equal(
+    checks.find((check) => check.name === "github_commit").status,
+    "verified",
+  );
+  assert.match(requestedUrl, /\/repos\/example\/project\/commits\//);
+  assert.doesNotMatch(requestedUrl, /project\.GIT/);
 });
 
 test("network verification refuses hostnames that resolve to private addresses", async () => {
@@ -802,6 +904,35 @@ test("CLI exposes its version for reviewers and automation", async () => {
   assert.match(result.stdout.trim(), /^solana-ship-receipt v0\.1\.0$/);
 });
 
+test("CLI sample uses a deterministic public fixture", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "ship-receipt-sample-"));
+  const firstPath = join(dir, "first.json");
+  const secondPath = join(dir, "second.json");
+  try {
+    await execFileAsync(
+      process.execPath,
+      ["src/cli.mjs", "sample", "--out", firstPath],
+      { cwd: process.cwd() },
+    );
+    await execFileAsync(
+      process.execPath,
+      ["src/cli.mjs", "sample", "--out", secondPath],
+      { cwd: process.cwd() },
+    );
+    const first = JSON.parse(await readFile(firstPath, "utf8"));
+    const second = JSON.parse(await readFile(secondPath, "utf8"));
+    assert.deepEqual(first, second);
+    assert.equal(first.payload.repository.url, "https://github.com/coral-xyz/anchor");
+    assert.equal(
+      first.payload.repository.commit,
+      "db4c9d645c82d7186bfe91a43d845f83d95b1d92",
+    );
+    assert.equal(first.payload.receiptId, "00000000-0000-4000-8000-000000000002");
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test("CLI rejects unknown options instead of silently ignoring typos", async () => {
   const dir = await mkdtemp(join(tmpdir(), "ship-receipt-cli-options-"));
   const receiptPath = join(dir, "receipt.json");
@@ -1077,6 +1208,36 @@ test("RPC checks expose bounded evidence and flag failed transactions", async ()
   assert.equal(solanaCheck.details.slot, 42);
   assert.equal(solanaCheck.details.blockTime, 1700000000);
   assert.match(solanaCheck.message, /execution error/i);
+});
+
+test("RPC transaction checks reject missing execution metadata", async () => {
+  const payload = createPayload({
+    projectTitle: "Incomplete RPC evidence",
+    projectDescription:
+      "A project used to reject transaction responses without execution metadata.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    transactionSignature: encodeBase58(Buffer.alloc(64, 10)),
+  });
+  const checks = await verifyNetwork(createEnvelope(payload), {
+    lookupImpl: async () => [{ address: "93.184.216.34", family: 4 }],
+    fetchImpl: async (url) =>
+      url.includes("api.github.com")
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({ sha: payload.repository.commit }),
+          }
+        : {
+            ok: true,
+            status: 200,
+            json: async () => ({ result: { slot: 42, blockTime: 1700000000 } }),
+          },
+  });
+  const solanaCheck = checks.find((check) => check.name === "solana_state");
+  assert.equal(solanaCheck.status, "failed");
+  assert.equal(solanaCheck.details.executionStatus, "unknown");
+  assert.match(solanaCheck.message, /did not include execution status/i);
 });
 
 test("local viewer is loopback-only, read-only, and exposes HTML plus JSON", async () => {
@@ -1658,7 +1819,7 @@ test("CLI bundle refuses to overwrite an existing reviewer bundle", async () => 
         ["src/cli.mjs", "bundle", receiptPath, "--out-dir", outputDir],
         { cwd: process.cwd() },
       ),
-      (error) => /must be empty/i.test(error.stderr),
+      (error) => /must not already exist/i.test(error.stderr),
     );
     assert.equal(
       await readFile(join(outputDir, "manifest.json"), "utf8"),

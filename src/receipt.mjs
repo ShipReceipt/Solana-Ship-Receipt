@@ -658,7 +658,7 @@ function githubApiUrl(repositoryUrl, commit) {
   const parts = parsed.pathname.split("/").filter(Boolean);
   if (parts.length < 2)
     throw new Error("GitHub repository URL must include owner and repository");
-  return `https://api.github.com/repos/${parts[0]}/${parts[1].replace(/\.git$/, "")}/commits/${encodeURIComponent(commit)}`;
+  return `https://api.github.com/repos/${parts[0]}/${parts[1].replace(/\.git$/i, "")}/commits/${encodeURIComponent(commit)}`;
 }
 
 async function fetchJson(url, init = {}, timeoutMs = 10000, fetchImpl = fetch) {
@@ -813,18 +813,33 @@ export async function verifyNetwork(envelope, options = {}) {
         if (Number.isInteger(rpcValue.slot)) details.slot = rpcValue.slot;
         if (Number.isInteger(rpcValue.blockTime))
           details.blockTime = rpcValue.blockTime;
-        const executionError = rpcValue.meta?.err ?? null;
-        details.executionStatus =
-          executionError === null ? "succeeded" : "failed";
-        checks.push({
-          name: "solana_state",
-          status: executionError === null ? "verified" : "failed",
-          message:
-            executionError === null
-              ? "getTransaction returned a confirmed successful transaction"
-              : "getTransaction reported an execution error",
-          details,
-        });
+        const hasExecutionStatus =
+          rpcValue.meta &&
+          typeof rpcValue.meta === "object" &&
+          !Array.isArray(rpcValue.meta) &&
+          Object.hasOwn(rpcValue.meta, "err");
+        if (!hasExecutionStatus) {
+          details.executionStatus = "unknown";
+          checks.push({
+            name: "solana_state",
+            status: "failed",
+            message: "getTransaction response did not include execution status",
+            details,
+          });
+        } else {
+          const executionError = rpcValue.meta.err;
+          details.executionStatus =
+            executionError === null ? "succeeded" : "failed";
+          checks.push({
+            name: "solana_state",
+            status: executionError === null ? "verified" : "failed",
+            message:
+              executionError === null
+                ? "getTransaction returned a confirmed successful transaction"
+                : "getTransaction reported an execution error",
+            details,
+          });
+        }
       } else {
         const details = {};
         if (typeof rpcValue.owner === "string") details.owner = rpcValue.owner;
@@ -832,10 +847,13 @@ export async function verifyNetwork(envelope, options = {}) {
           details.executable = rpcValue.executable;
         if (Number.isSafeInteger(rpcValue.lamports))
           details.lamports = rpcValue.lamports;
+        const executable = rpcValue.executable === true;
         checks.push({
           name: "solana_state",
-          status: "verified",
-          message: "getAccountInfo returned confirmed state",
+          status: executable ? "verified" : "failed",
+          message: executable
+            ? "getAccountInfo returned an executable program account"
+            : "getAccountInfo did not return an executable program account",
           details,
         });
       }

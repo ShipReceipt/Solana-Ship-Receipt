@@ -37,7 +37,7 @@ verification record + reviewer HTML + manifest
 | Receipt structure | Supported envelope version and valid payload fields |
 | Receipt integrity | SHA-256 hash of the canonical payload |
 | GitHub revision | Exact 40-character commit resolves in the public repository |
-| Solana state | Transaction succeeds or a program account is returned by RPC |
+| Solana state | Transaction succeeds or the supplied program account is executable |
 | Demo URL | Public endpoint responds after bounded, revalidated redirects |
 | Wallet attestation | Domain-separated Ed25519 signature is valid |
 
@@ -68,12 +68,21 @@ There are no runtime npm dependencies.
 
 ## Quick start
 
-Start by testing the verifier itself:
+Clone the repository and run the complete local quality gate:
 
 ```powershell
-npm test
+git clone https://github.com/ShipReceipt/Solana-Ship-Receipt.git
+cd Solana-Ship-Receipt
+npm run check
 node src/cli.mjs --version
 ```
+
+`npm run check` validates source syntax, runs the full test suite, and inspects
+the exact npm package contents without publishing anything. No dependency
+installation step is required.
+
+The `sample` command uses a pinned public fixture and fixed metadata, so it
+produces the same receipt hash on every run.
 
 Create an unsigned receipt:
 
@@ -230,12 +239,14 @@ unavailable.
 
 ```powershell
 npm test
+npm run test:coverage
 ```
 
 The suite covers canonicalization, tamper detection, Ed25519 signing, strict
 versioning, Solana address validation, SSRF defenses, redirect handling,
 machine-readable output, the local viewer, reviewer bundles, offline audit, and
-artifact overwrite protection.
+artifact overwrite protection. `npm run test:coverage` adds Node's built-in
+line, branch, and function coverage report.
 
 ## Repository layout
 
