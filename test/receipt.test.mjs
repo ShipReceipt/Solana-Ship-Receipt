@@ -912,6 +912,21 @@ test("CLI exposes its version for reviewers and automation", async () => {
   assert.match(result.stdout.trim(), /^solana-ship-receipt v0\.1\.0$/);
 });
 
+test("CLI help gives newcomers a complete first-run path", async () => {
+  const result = await execFileAsync(
+    process.execPath,
+    ["src/cli.mjs", "--help"],
+    { cwd: process.cwd() },
+  );
+  assert.match(result.stdout, /First run \(from this repository\)/);
+  assert.match(result.stdout, /sample --out first\.receipt\.json/);
+  assert.match(result.stdout, /verify first\.receipt\.json/);
+  assert.match(result.stdout, /render first\.receipt\.json/);
+  assert.match(result.stdout, /full 40-character Git SHA/);
+  assert.match(result.stdout, /write-once/);
+  assert.match(result.stdout, /docs\/GETTING-STARTED\.md/);
+});
+
 test("CLI sample uses a deterministic public fixture", async () => {
   const dir = await mkdtemp(join(tmpdir(), "ship-receipt-sample-"));
   const firstPath = join(dir, "first.json");
@@ -929,11 +944,26 @@ test("CLI sample uses a deterministic public fixture", async () => {
     );
     const first = JSON.parse(await readFile(firstPath, "utf8"));
     const second = JSON.parse(await readFile(secondPath, "utf8"));
+    const fixture = JSON.parse(
+      await readFile(
+        join(
+          process.cwd(),
+          "fixtures",
+          "public-projects",
+          "metaplex-token-metadata.json",
+        ),
+        "utf8",
+      ),
+    );
     assert.deepEqual(first, second);
-    assert.equal(first.payload.repository.url, "https://github.com/coral-xyz/anchor");
+    assert.deepEqual(first, fixture);
+    assert.equal(
+      first.payload.repository.url,
+      "https://github.com/metaplex-foundation/mpl-token-metadata",
+    );
     assert.equal(
       first.payload.repository.commit,
-      "db4c9d645c82d7186bfe91a43d845f83d95b1d92",
+      "349e061053c6fc5b6b815e03e896e4db57012893",
     );
     assert.equal(first.payload.receiptId, "00000000-0000-4000-8000-000000000002");
   } finally {
@@ -1176,6 +1206,25 @@ test("threat model documents the security boundaries required before hosting", a
     "## Hosted-service release gates",
   ])
     assert.match(threatModel, new RegExp(required, "i"));
+});
+
+test("getting started guide covers first use and reviewer handoff", async () => {
+  const guide = await readFile(
+    join(process.cwd(), "docs", "GETTING-STARTED.md"),
+    "utf8",
+  );
+  for (const required of [
+    "npm ci",
+    "sample --out first.receipt.json",
+    "git rev-parse HEAD",
+    "FULL_40_CHARACTER_COMMIT_SHA",
+    "verify my-project.receipt.json --network",
+    "bundle my-project.receipt.json",
+    "audit reviewer-bundle --json",
+    "not_checked",
+    "Common problems",
+  ])
+    assert.match(guide, new RegExp(required.replaceAll(".", "\\."), "i"));
 });
 
 test("RPC checks expose bounded evidence and flag failed transactions", async () => {

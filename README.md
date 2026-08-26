@@ -12,6 +12,41 @@ The verifier reports each assertion independently as `verified`, `warning`,
 `failed`, or `not_checked`. It never turns missing evidence into a successful
 check.
 
+New to provenance receipts? Follow the step-by-step
+[Getting Started guide](docs/GETTING-STARTED.md). No wallet or Solana CLI is
+needed for the first run.
+
+## Quick start
+
+Requirements: Node.js 20 or newer and Git. These commands work in PowerShell,
+Command Prompt, macOS, and Linux terminals:
+
+```shell
+git clone https://github.com/ShipReceipt/Solana-Ship-Receipt.git
+cd Solana-Ship-Receipt
+npm ci
+node src/cli.mjs sample --out first.receipt.json
+node src/cli.mjs verify first.receipt.json
+node src/cli.mjs render first.receipt.json --out first.receipt.html
+```
+
+The verification should mark the receipt version, schema, and hash as
+`verified`. It will mark wallet attestation as `not_checked` because the sample
+is intentionally unsigned. Open `first.receipt.html` in any browser to see the
+reviewer-facing result. The sample uses fixed metadata and a pinned public
+revision, so its receipt hash is deterministic.
+
+Check that the sample's pinned commit still exists on public GitHub:
+
+```shell
+node src/cli.mjs verify first.receipt.json --network
+```
+
+Ready to use your own repository? The [Getting Started
+guide](docs/GETTING-STARTED.md#4-create-a-receipt-for-your-project) explains how
+to find the exact 40-character commit SHA, add optional Solana evidence, and
+prepare the final reviewer bundle.
+
 ## Why this exists
 
 Project submissions often combine a repository link, deployment address,
@@ -57,80 +92,40 @@ Only `failed` makes the verification result fail and produces a non-zero exit
 status. Warnings and unchecked optional evidence remain visible in every
 human- and machine-readable result.
 
-## Requirements
+## Create a receipt for your project
 
-- Node.js 20 or newer
-- A public GitHub repository and exact 40-character commit SHA
-- Optional: a Solana transaction signature, program address, demo URL, or
-  Solana CLI keypair for local signing
+From your project's Git checkout, copy the immutable commit identifier:
 
-There are no runtime npm dependencies.
-
-## Quick start
-
-Clone the repository and run the complete local quality gate:
-
-```powershell
-git clone https://github.com/ShipReceipt/Solana-Ship-Receipt.git
-cd Solana-Ship-Receipt
-npm ci
-npm run check
-node src/cli.mjs --version
+```shell
+git rev-parse HEAD
 ```
 
-`npm ci` installs from the committed lockfile (the current release has no
-runtime npm dependencies). `npm run check` validates source syntax, runs the
-full test suite, and inspects the exact npm package contents without publishing
-anything.
+Then replace the placeholders in this cross-platform command:
 
-The `sample` command uses a pinned public fixture and fixed metadata, so it
-produces the same receipt hash on every run.
-
-Create an unsigned receipt:
-
-```powershell
-node src/cli.mjs create `
-  --title "My Solana Project" `
-  --description "A concise description of the shipped build." `
-  --repo "https://github.com/OWNER/REPOSITORY" `
-  --commit "<exact-40-character-commit-sha>" `
-  --cluster devnet `
-  --program "<program-address>" `
-  --demo "https://example.com" `
-  --out ship-receipt.json
+```shell
+node src/cli.mjs create --title "My Solana Project" --description "A concise description of the shipped build." --repo "https://github.com/OWNER/REPOSITORY" --commit "FULL_40_CHARACTER_COMMIT_SHA" --cluster devnet --out ship-receipt.json
 ```
 
-`--program`, `--tx`, and `--demo` are optional. Use `--rpc` to select a custom
-public RPC endpoint. The default cluster is `devnet`.
+Verify local integrity first, then query public evidence:
 
-Verify the receipt locally, then check public evidence:
-
-```powershell
+```shell
 node src/cli.mjs verify ship-receipt.json
 node src/cli.mjs verify ship-receipt.json --network
-node src/cli.mjs verify ship-receipt.json --network --json
 ```
 
-Local verification checks the receipt contract, canonical hash, and optional
-wallet attestation. `--network` additionally queries GitHub, the configured
-Solana RPC endpoint, and the demo URL when present. `--json` is intended for CI
-and agent workflows.
+`--program`, `--tx`, and `--demo` add optional public evidence. Use `--rpc` to
+select a custom public RPC endpoint. Omitted optional evidence is reported as
+`not_checked`, and any failed check produces a non-zero exit status.
 
-Any failed check produces a non-zero exit status.
-
-Generated files are write-once by default. The CLI refuses to replace an
-existing receipt, signed receipt, or rendered HTML file; choose a new output
-path for a new evidence revision.
+Generated files are write-once by default. Choose a new output path for each
+evidence revision rather than replacing an existing receipt.
 
 ## Create a reviewer bundle
 
 The recommended handoff is an immutable reviewer bundle:
 
-```powershell
-node src/cli.mjs bundle ship-receipt.json `
-  --out-dir reviewer-bundle `
-  --network
-
+```shell
+node src/cli.mjs bundle ship-receipt.json --out-dir reviewer-bundle --network
 node src/cli.mjs audit reviewer-bundle --json
 ```
 
@@ -261,7 +256,7 @@ line, branch, and function coverage report.
 | `schema/` | Versioned JSON Schema contract |
 | `fixtures/` | Pinned public receipts used by tests |
 | `skills/` | Repo-local Codex and Claude workflow skill |
-| `docs/` | Delivery milestones and threat model |
+| `docs/` | Beginner guide, delivery milestones, and threat model |
 | `test/` | Deterministic unit, security, CLI, viewer, and bundle tests |
 | `.github/workflows/` | Cross-version CI and manual receipt verification |
 

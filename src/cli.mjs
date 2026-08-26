@@ -20,6 +20,11 @@ const MAX_RECEIPT_FILE_BYTES = 2 * 1024 * 1024;
 function usage() {
   console.log(`Solana Ship Receipt v${VERSION}
 
+First run (from this repository):
+  node src/cli.mjs sample --out first.receipt.json
+  node src/cli.mjs verify first.receipt.json
+  node src/cli.mjs render first.receipt.json --out first.receipt.html
+
 Commands:
   create   --title T --description D --repo URL --commit SHA [options]
   sign     RECEIPT.json --keypair PATH [--out PATH]  (default: RECEIPT.signed.json)
@@ -33,6 +38,14 @@ Commands:
 Create options:
   --cluster mainnet|devnet|testnet   (default: devnet)
   --rpc URL --tx SIGNATURE --program PROGRAM_ID --demo URL --keypair PATH --out PATH
+
+Notes:
+  --commit requires the full 40-character Git SHA (try: git rev-parse HEAD)
+  Generated artifacts are write-once; choose a new output path for each revision
+  Installed package users can replace "node src/cli.mjs" with "ship-receipt"
+
+Guide:
+  https://github.com/ShipReceipt/Solana-Ship-Receipt/blob/main/docs/GETTING-STARTED.md
 `);
 }
 
@@ -246,11 +259,11 @@ try {
   } else if (command === "sample") {
     const out = args.out || "sample.receipt.json";
     const payload = createPayload({
-      projectTitle: "Solana Ship Receipt",
+      projectTitle: "Metaplex Token Metadata",
       projectDescription:
-        "A sample provenance receipt for testing the verifier.",
-      repositoryUrl: "https://github.com/coral-xyz/anchor",
-      commit: "db4c9d645c82d7186bfe91a43d845f83d95b1d92",
+        "A public Metaplex Token Metadata fixture pinned to an exact repository revision.",
+      repositoryUrl: "https://github.com/metaplex-foundation/mpl-token-metadata",
+      commit: "349e061053c6fc5b6b815e03e896e4db57012893",
       cluster: "devnet",
       createdAt: "2026-08-23T00:00:00.000Z",
       receiptId: "00000000-0000-4000-8000-000000000002",
