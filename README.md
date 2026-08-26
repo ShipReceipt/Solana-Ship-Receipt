@@ -73,13 +73,15 @@ Clone the repository and run the complete local quality gate:
 ```powershell
 git clone https://github.com/ShipReceipt/Solana-Ship-Receipt.git
 cd Solana-Ship-Receipt
+npm ci
 npm run check
 node src/cli.mjs --version
 ```
 
-`npm run check` validates source syntax, runs the full test suite, and inspects
-the exact npm package contents without publishing anything. No dependency
-installation step is required.
+`npm ci` installs from the committed lockfile (the current release has no
+runtime npm dependencies). `npm run check` validates source syntax, runs the
+full test suite, and inspects the exact npm package contents without publishing
+anything.
 
 The `sample` command uses a pinned public fixture and fixed metadata, so it
 produces the same receipt hash on every run.
@@ -220,9 +222,9 @@ fail explicitly instead of being ignored.
 ## Automation and agent workflows
 
 The [Verify Ship Receipt workflow](.github/workflows/verify-receipt.yml) runs
-the test suite, creates a receipt from pinned inputs, performs local and public
-verification, builds and audits a reviewer bundle, and uploads the evidence as
-a GitHub Actions artifact. It never handles a private key.
+`npm ci` and the test suite, creates a receipt from pinned inputs, performs
+local and public verification, builds and audits a reviewer bundle, and uploads
+the evidence as a GitHub Actions artifact. It never handles a private key.
 
 The repo-local
 [`solana-ship-receipt` skill](skills/solana-ship-receipt/SKILL.md) guides Codex
@@ -260,6 +262,8 @@ line, branch, and function coverage report.
 | `fixtures/` | Pinned public receipts used by tests |
 | `skills/` | Repo-local Codex and Claude workflow skill |
 | `docs/` | Delivery milestones and threat model |
+| `test/` | Deterministic unit, security, CLI, viewer, and bundle tests |
+| `.github/workflows/` | Cross-version CI and manual receipt verification |
 
 ## Security model and limitations
 
@@ -294,6 +298,9 @@ threat model.
 
 Delivery goals and acceptance criteria are tracked in
 [`docs/MILESTONES.md`](docs/MILESTONES.md).
+
+Contribution and vulnerability-reporting procedures are documented in
+[`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).
 
 ## License
 

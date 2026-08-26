@@ -32,6 +32,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
       - name: Check source syntax
         run: npm run check:syntax
 

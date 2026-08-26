@@ -511,6 +511,7 @@ test("GitHub Actions workflow exposes a reproducible network verification job", 
   assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /timeout-minutes: 10/);
+  assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund/);
   assert.match(workflow, /npm run check:syntax/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /node src\/cli\.mjs create/);
@@ -535,6 +536,7 @@ test("CI runs tests and package checks across supported Node versions", async ()
   assert.match(workflow, /actions\/setup-node@[0-9a-f]{40} # v4/);
   assert.match(workflow, /persist-credentials: false/);
   assert.match(workflow, /timeout-minutes: 10/);
+  assert.match(workflow, /npm ci --ignore-scripts --no-audit --no-fund/);
   assert.match(workflow, /npm run check:syntax/);
   assert.match(workflow, /npm test/);
   assert.match(workflow, /npm pack --dry-run --json/);
@@ -555,6 +557,12 @@ test("package metadata exposes the canonical repository and quality gate", async
   assert.match(packageMetadata.scripts.check, /check:syntax/);
   assert.match(packageMetadata.scripts.check, /npm test/);
   assert.match(packageMetadata.scripts.check, /npm pack --dry-run --json/);
+  const lockfile = JSON.parse(
+    await readFile(join(process.cwd(), "package-lock.json"), "utf8"),
+  );
+  assert.equal(lockfile.lockfileVersion, 3);
+  assert.equal(lockfile.packages[""].name, packageMetadata.name);
+  assert.deepEqual(lockfile.packages[""].bin, packageMetadata.bin);
 });
 
 test("GitHub verification normalizes a case-insensitive clone suffix", async () => {
