@@ -1,0 +1,4 @@
+interface:
+  display_name: "Solana Ship Receipt"
+  short_description: "Generate and verify safe Solana provenance receipts"
+  default_prompt: "Help me create a Solana Ship Receipt for this project using local-first verification."

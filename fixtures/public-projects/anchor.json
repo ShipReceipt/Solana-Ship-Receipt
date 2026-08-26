@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Anchor",
+    "projectDescription": "A public Anchor framework source fixture pinned to an exact repository revision.",
+    "repository": {
+      "url": "https://github.com/coral-xyz/anchor",
+      "commit": "db4c9d645c82d7186bfe91a43d845f83d95b1d92"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com"
+    },
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000001"
+  },
+  "receiptHash": "2906c93bf32a1c53885a73fdcd0a30089fe03209043bc05aed0d597e81703394"
+}

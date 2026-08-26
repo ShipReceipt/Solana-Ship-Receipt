@@ -1,0 +1,34 @@
+{
+  "name": "solana-ship-receipt",
+  "version": "0.1.0",
+  "description": "A signed, reviewer-readable provenance receipt for Solana projects.",
+  "type": "module",
+  "keywords": [
+    "solana",
+    "provenance",
+    "verification",
+    "supply-chain",
+    "ed25519"
+  ],
+  "files": [
+    "src/",
+    "schema/",
+    "docs/",
+    "fixtures/",
+    "skills/",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "ship-receipt": "src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "test:coverage": "node --experimental-test-coverage --test",
+    "sample": "node src/cli.mjs sample"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

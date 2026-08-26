@@ -1,0 +1,109 @@
+name: Verify Ship Receipt
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Project title
+        required: true
+        type: string
+      description:
+        description: One-line project description
+        required: true
+        type: string
+      repository:
+        description: Public GitHub repository URL
+        required: true
+        type: string
+      commit:
+        description: Exact 40-character Git commit SHA
+        required: true
+        type: string
+      cluster:
+        description: Solana cluster
+        required: true
+        default: devnet
+        type: choice
+        options:
+          - devnet
+          - testnet
+          - mainnet
+      transaction:
+        description: Optional Solana transaction signature
+        required: false
+        type: string
+      program:
+        description: Optional Solana program address
+        required: false
+        type: string
+      demo:
+        description: Optional public demo URL
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      TITLE: ${{ inputs.title }}
+      DESCRIPTION: ${{ inputs.description }}
+      REPOSITORY: ${{ inputs.repository }}
+      COMMIT: ${{ inputs.commit }}
+      CLUSTER: ${{ inputs.cluster }}
+      TRANSACTION: ${{ inputs.transaction }}
+      PROGRAM: ${{ inputs.program }}
+      DEMO: ${{ inputs.demo }}
+    steps:
+      - name: Check out verifier
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+
+      - name: Run verifier tests
+        run: npm test
+
+      - name: Create receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--title "$TITLE" --description "$DESCRIPTION" --repo "$REPOSITORY" --commit "$COMMIT" --cluster "$CLUSTER")
+          if [[ -n "$TRANSACTION" ]]; then args+=(--tx "$TRANSACTION"); fi
+          if [[ -n "$PROGRAM" ]]; then args+=(--program "$PROGRAM"); fi
+          if [[ -n "$DEMO" ]]; then args+=(--demo "$DEMO"); fi
+          node src/cli.mjs create "${args[@]}" --out ship-receipt.json
+
+      - name: Verify receipt locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          node src/cli.mjs verify ship-receipt.json --json | tee local-verification.json
+
+      - name: Build reviewer bundle against public evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          node src/cli.mjs bundle ship-receipt.json --out-dir reviewer-bundle --network
+
+      - name: Audit reviewer bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          node src/cli.mjs audit reviewer-bundle --json | tee bundle-audit.json
+
+      - name: Upload receipt evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: solana-ship-receipt
+          path: |
+            ship-receipt.json
+            local-verification.json
+            reviewer-bundle/
+            bundle-audit.json
+          if-no-files-found: warn

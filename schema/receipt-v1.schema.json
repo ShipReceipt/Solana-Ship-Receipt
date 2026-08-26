@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:solana-ship-receipt:schema:v1",
+  "title": "Solana Ship Receipt v1",
+  "type": "object",
+  "required": ["version", "payload", "receiptHash"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "receiptHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "payload": {
+      "type": "object",
+      "required": [
+        "projectTitle",
+        "projectDescription",
+        "repository",
+        "solana",
+        "createdAt",
+        "receiptId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "projectTitle": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "projectDescription": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 1000
+        },
+        "repository": {
+          "type": "object",
+          "required": ["url", "commit"],
+          "additionalProperties": false,
+          "properties": {
+            "url": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^https://(www\\.)?github\\.com/[^/?#]+/[^/?#]+/?$"
+            },
+            "commit": { "type": "string", "pattern": "^[0-9a-fA-F]{40}$" }
+          }
+        },
+        "solana": {
+          "type": "object",
+          "required": ["cluster", "rpcUrl"],
+          "additionalProperties": false,
+          "properties": {
+            "cluster": { "enum": ["mainnet", "devnet", "testnet"] },
+            "rpcUrl": {
+              "type": "string",
+              "maxLength": 2048,
+              "pattern": "^https?://"
+            },
+            "transactionSignature": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 88,
+              "pattern": "^[1-9A-HJ-NP-Za-km-z]+$"
+            },
+            "programId": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 44,
+              "pattern": "^[1-9A-HJ-NP-Za-km-z]+$"
+            }
+          }
+        },
+        "demoUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https?://"
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "receiptId": { "type": "string", "format": "uuid" }
+      }
+    },
+    "attestation": {
+      "type": "object",
+      "required": ["publicKey", "signature", "algorithm", "context"],
+      "additionalProperties": false,
+      "properties": {
+        "publicKey": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 44,
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]+$"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 88,
+          "pattern": "^[1-9A-HJ-NP-Za-km-z]+$"
+        },
+        "algorithm": { "const": "Ed25519" },
+        "context": { "const": "solana-ship-receipt/v1" }
+      }
+    }
+  }
+}

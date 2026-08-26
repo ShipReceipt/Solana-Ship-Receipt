@@ -1,0 +1,12 @@
+node_modules/
+*.receipt.json
+*.receipt.html
+*.signed.json
+ship-receipt.json
+ship-receipt.html
+reviewer-bundle/
+reviewer-bundle-*/
+coverage/
+*.log
+.DS_Store
+Thumbs.db

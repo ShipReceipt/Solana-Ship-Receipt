@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Metaplex Token Metadata",
+    "projectDescription": "A public Metaplex Token Metadata fixture pinned to an exact repository revision.",
+    "repository": {
+      "url": "https://github.com/metaplex-foundation/mpl-token-metadata",
+      "commit": "349e061053c6fc5b6b815e03e896e4db57012893"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com"
+    },
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000002"
+  },
+  "receiptHash": "1f0485972af9724aaac07bbac2fdbee8ac9f0deb57755a4137b7812f0a64fcd4"
+}
