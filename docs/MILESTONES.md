@@ -1,8 +1,5 @@
 # Delivery milestones
 
-Approval work began on 23 August 2026. The target remains 10 September 2026,
-11:59 PM Africa/Nairobi.
-
 ## Milestone 1 - Receipt contract and local verifier (23-25 August)
 
 - Versioned canonical JSON receipt format.
