@@ -78,7 +78,7 @@ const COMMAND_OPTIONS = {
   sample: new Set(["out"]),
 };
 
-const BOOLEAN_OPTIONS = new Set(["network", "json"]);
+const BOOLEAN_OPTIONS = new Set(["network", "json", "public"]);
 const POSITIONAL_COUNTS = {
   create: 0,
   sign: 1,
