@@ -13,8 +13,19 @@ import { canonicalJson, renderHtml, verifyEnvelope } from "./receipt.mjs";
 
 const BUNDLE_FILES = ["receipt.json", "verification.json", "receipt.html"];
 const BUNDLE_DIRECTORY_FILES = [...BUNDLE_FILES, "manifest.json"];
-const LOCAL_CHECK_ORDER = ["version", "schema", "receipt_hash", "attestation"];
-const NETWORK_CHECK_ORDER = ["github_commit", "solana_state", "demo_url"];
+const LOCAL_CHECK_ORDER = [
+  "version",
+  "schema",
+  "receipt_hash",
+  "attestation",
+  "solana_memo",
+];
+const NETWORK_CHECK_ORDER = [
+  "github_commit",
+  "solana_state",
+  "verified_build",
+  "demo_url",
+];
 const LOCAL_CHECK_NAMES = new Set(LOCAL_CHECK_ORDER);
 const CHECK_NAMES = new Set([...LOCAL_CHECK_ORDER, ...NETWORK_CHECK_ORDER]);
 const CHECK_STATUSES = new Set([

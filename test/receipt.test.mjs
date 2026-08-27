@@ -154,6 +154,96 @@ test("rejects malformed Solana transaction signatures and program IDs", () => {
   );
 });
 
+test("memo anchors match the canonical payload hash without creating a self-reference", async () => {
+  const fixedCreatedAt = "2026-08-27T00:00:00.000Z";
+  const fixedReceiptId = "00000000-0000-4000-8000-000000000001";
+  const basePayload = createPayload({
+    projectTitle: "Memo matching",
+    projectDescription:
+      "A project used to exercise memo anchoring against the canonical receipt hash.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    createdAt: fixedCreatedAt,
+    receiptId: fixedReceiptId,
+  });
+  const memoTarget = sha256({
+    ...basePayload,
+    solana: { ...basePayload.solana, memo: undefined },
+  });
+  const validPayload = createPayload({
+    projectTitle: "Memo matching",
+    projectDescription:
+      "A project used to exercise memo anchoring against the canonical receipt hash.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    createdAt: fixedCreatedAt,
+    receiptId: fixedReceiptId,
+    memo: memoTarget,
+  });
+  const envelope = createEnvelope(validPayload);
+  const result = await verifyEnvelope(envelope);
+  assert.equal(result.passed, true);
+  assert.equal(
+    result.checks.find((check) => check.name === "solana_memo").status,
+    "verified",
+  );
+
+  const failedPayload = createPayload({
+    projectTitle: "Memo matching",
+    projectDescription:
+      "A project used to exercise memo anchoring against the canonical receipt hash.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    createdAt: fixedCreatedAt,
+    receiptId: fixedReceiptId,
+    memo: "deadbeef",
+  });
+  const failed = await verifyEnvelope(createEnvelope(failedPayload));
+  assert.equal(
+    failed.checks.find((check) => check.name === "solana_memo").status,
+    "failed",
+  );
+});
+
+test("verified-build URLs are accepted and verified when supplied", async () => {
+  const payload = createPayload({
+    projectTitle: "Verified build",
+    projectDescription:
+      "A project used to exercise verified-build evidence checks.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+    verifiedBuildUrl: "https://www.github.com/ShipReceipt/Solana-Ship-Receipt",
+  });
+  const fetchImpl = async (url, init = {}) => {
+    if (url.includes("api.github.com")) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({ sha: payload.repository.commit }),
+      };
+    }
+    if (url.includes("github.com")) {
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => "0" },
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ result: { value: null } }),
+    };
+  };
+  const checks = await verifyNetwork(createEnvelope(payload), { fetchImpl });
+  assert.equal(
+    checks.find((check) => check.name === "verified_build").status,
+    "verified",
+  );
+});
+
 test("network checks compare GitHub SHA and distinguish an absent account", async () => {
   const payload = createPayload({
     projectTitle: "Network checks",
@@ -1297,6 +1387,166 @@ test("RPC transaction checks reject missing execution metadata", async () => {
   assert.match(solanaCheck.message, /did not include execution status/i);
 });
 
+test("builder form creates a receipt from project metadata and renders it", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Builder form",
+    projectDescription:
+      "A project used to exercise the builder-facing submission form.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const response = await fetch(`${viewer.url}`, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        projectTitle: "Builder form",
+        projectDescription: "A project used to exercise the builder-facing submission form.",
+        repositoryUrl: "https://github.com/example/project",
+        commit: "abcdef1234567890abcdef1234567890abcdef12",
+        cluster: "devnet",
+      }).toString(),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    assert.match(body, /Builder form/);
+    assert.match(body, /Verification/);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("reviewer upload accepts multipart JSON files", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Multipart reviewer",
+    projectDescription:
+      "A project used to exercise reviewer uploads via a file input.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const form = new FormData();
+    form.append("receipt", JSON.stringify(envelope));
+    const response = await fetch(`${viewer.url}`, {
+      method: "POST",
+      body: form,
+    });
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /Multipart reviewer/);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("public verification API accepts a receipt payload and returns structured checks", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Public verifier",
+    projectDescription:
+      "A project used to exercise the hosted verification API.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const response = await fetch(`${viewer.url}api/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.passed, true);
+    assert.ok(Array.isArray(body.checks));
+    assert.ok(body.checks.some((check) => check.name === "schema"));
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("public reviewer page exposes a hosted verification form", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Public review page",
+    projectDescription:
+      "A project used to exercise the hosted reviewer form.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const page = await fetch(`${viewer.url}review`);
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.match(html, /Verify receipt/i);
+    assert.match(html, /\/api\/verify/i);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("public reviewer page verifies a submitted receipt and renders the result", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Submitted review",
+    projectDescription:
+      "A project used to exercise hosted verification rendering.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const response = await fetch(`${viewer.url}api/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.passed, true);
+    assert.match(JSON.stringify(body), /schema/);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("viewer allows explicit public hosts only with a safety gate", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Public reviewer",
+    projectDescription:
+      "A project used to exercise an explicitly allowed public reviewer host.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  await assert.rejects(
+    startViewer({ envelope, port: 0, host: "0.0.0.0", network: false }),
+    /explicitly enabled/i,
+  );
+  const viewer = await startViewer({
+    envelope,
+    port: 0,
+    host: "0.0.0.0",
+    allowPublicHost: true,
+    network: false,
+  });
+  try {
+    assert.match(viewer.url, /^http:\/\/0\.0\.0\.0:/);
+  } finally {
+    await viewer.close();
+  }
+});
+
 test("local viewer is loopback-only, read-only, and exposes HTML plus JSON", async () => {
   const { startViewer } = await import("../src/viewer.mjs");
   await assert.rejects(
@@ -1352,6 +1602,14 @@ test("local viewer is loopback-only, read-only, and exposes HTML plus JSON", asy
     });
     assert.equal(mutation.status, 405);
     assert.equal(mutation.headers.get("allow"), "GET, HEAD");
+
+    const posted = await fetch(`${viewer.url}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+    assert.equal(posted.status, 200);
+    assert.match(await posted.text(), /Receipt upload/i);
 
     const missing = await fetch(`${viewer.url}missing`);
     assert.equal(missing.status, 404);

@@ -30,6 +30,7 @@ const PAYLOAD_KEYS = new Set([
   "repository",
   "solana",
   "demoUrl",
+  "verifiedBuildUrl",
   "createdAt",
   "receiptId",
 ]);
@@ -39,6 +40,7 @@ const SOLANA_KEYS = new Set([
   "rpcUrl",
   "transactionSignature",
   "programId",
+  "memo",
 ]);
 const ENVELOPE_KEYS = new Set([
   "version",
@@ -100,6 +102,16 @@ export function canonicalBytes(value) {
 
 export function sha256(value) {
   return createHash("sha256").update(canonicalBytes(value)).digest("hex");
+}
+
+function hashablePayload(payload) {
+  if (!payload || typeof payload !== "object") return payload;
+  if (!Object.hasOwn(payload, "solana") || !payload.solana || typeof payload.solana !== "object")
+    return payload;
+  return {
+    ...payload,
+    solana: { ...payload.solana, memo: undefined },
+  };
 }
 
 function attestationBytes(payload) {
@@ -482,8 +494,16 @@ export function validatePayload(payload) {
     );
   if (Object.hasOwn(payload.solana, "programId"))
     requireBase58Bytes(payload.solana.programId, 32, "programId");
+  if (Object.hasOwn(payload.solana, "memo")) {
+    if (typeof payload.solana.memo !== "string" || payload.solana.memo.length === 0)
+      throw new Error("solana.memo must be a non-empty string");
+    if (payload.solana.memo.length > 256)
+      throw new Error("solana.memo must not exceed 256 characters");
+  }
   if (Object.hasOwn(payload, "demoUrl"))
     requireHttpUrl(payload.demoUrl, "demoUrl");
+  if (Object.hasOwn(payload, "verifiedBuildUrl"))
+    requireHttpUrl(payload.verifiedBuildUrl, "verifiedBuildUrl");
   requireDateTime(payload.createdAt, "createdAt");
   if (
     typeof payload.receiptId !== "string" ||
@@ -522,8 +542,10 @@ export function createPayload(input = {}) {
       rpcUrl: input.rpcUrl ?? DEFAULT_RPC[cluster],
       transactionSignature: input.transactionSignature,
       programId: input.programId,
+      memo: input.memo,
     },
     demoUrl: input.demoUrl,
+    verifiedBuildUrl: input.verifiedBuildUrl,
     createdAt: input.createdAt ?? new Date().toISOString(),
     receiptId: input.receiptId ?? randomUUID(),
   });
@@ -536,7 +558,7 @@ export function createEnvelope(payload, attestation) {
   const envelope = {
     version: 1,
     payload,
-    receiptHash: sha256(payload),
+    receiptHash: sha256(hashablePayload(payload)),
   };
   if (attestation) {
     validateAttestationShape(attestation);
@@ -872,6 +894,44 @@ export async function verifyNetwork(envelope, options = {}) {
     });
   }
 
+  if (payload.verifiedBuildUrl) {
+    try {
+      let fetched = await fetchPublicUrl(
+        payload.verifiedBuildUrl,
+        { method: "HEAD", signal: AbortSignal.timeout(10000) },
+        { fetchImpl, lookupImpl, label: "verifiedBuildUrl" },
+      );
+      if (fetched.response.status === 405 || fetched.response.status === 501) {
+        fetched = await fetchPublicUrl(
+          payload.verifiedBuildUrl,
+          {
+            method: "GET",
+            signal: AbortSignal.timeout(10000),
+            headers: { range: "bytes=0-0" },
+          },
+          { fetchImpl, lookupImpl, label: "verifiedBuildUrl" },
+        );
+      }
+      checks.push({
+        name: "verified_build",
+        status: fetched.response.ok ? "verified" : "failed",
+        message: `Verified-build endpoint returned HTTP ${fetched.response.status} at ${fetched.finalUrl}`,
+      });
+    } catch (error) {
+      checks.push({
+        name: "verified_build",
+        status: networkErrorStatus(error),
+        message: `Verified-build check unavailable: ${error.message}`,
+      });
+    }
+  } else {
+    checks.push({
+      name: "verified_build",
+      status: "not_checked",
+      message: "No verified-build URL supplied",
+    });
+  }
+
   if (payload.demoUrl) {
     try {
       let fetched = await fetchPublicUrl(
@@ -945,7 +1005,7 @@ export async function verifyEnvelope(envelope, options = {}) {
     message: schemaIsValid ? "Receipt schema is valid" : schemaError.message,
   });
   if (payloadIsUsable) {
-    const expectedHash = sha256(envelope.payload);
+    const expectedHash = sha256(hashablePayload(envelope.payload));
     receiptHashIsValid = envelope.receiptHash === expectedHash;
     checks.push({
       name: "receipt_hash",
@@ -955,6 +1015,24 @@ export async function verifyEnvelope(envelope, options = {}) {
         : "Receipt hash does not match canonical payload",
     });
     checks.push({ name: "attestation", ...verifyAttestation(envelope) });
+    const memoValue = envelope?.payload?.solana?.memo;
+    if (memoValue === undefined || memoValue === null || memoValue === "") {
+      checks.push({
+        name: "solana_memo",
+        status: "not_checked",
+        message: "No Solana memo anchor supplied",
+      });
+    } else {
+      const expectedMemoHash = sha256(hashablePayload(envelope.payload));
+      const memoMatches = memoValue === expectedMemoHash;
+      checks.push({
+        name: "solana_memo",
+        status: memoMatches ? "verified" : "failed",
+        message: memoMatches
+          ? "Solana memo matches the canonical payload hash used for anchoring"
+          : "Solana memo does not match the canonical payload hash used for anchoring",
+      });
+    }
   } else {
     checks.push({
       name: "receipt_hash",
@@ -965,6 +1043,11 @@ export async function verifyEnvelope(envelope, options = {}) {
       name: "attestation",
       status: "not_checked",
       message: "Attestation skipped because the payload is invalid",
+    });
+    checks.push({
+      name: "solana_memo",
+      status: "not_checked",
+      message: "Memo check skipped because the payload is invalid",
     });
   }
   if (options.network) {
@@ -1070,6 +1153,8 @@ export function renderHtml(envelope, result) {
 <div><dt>Created</dt><dd><time datetime="${escape(envelope.payload.createdAt)}">${escape(envelope.payload.createdAt)}</time></dd></div>
 ${envelope.payload.solana.transactionSignature ? `<div><dt>Transaction</dt><dd>${externalLink(`${explorerBase}/tx/${encodeURIComponent(envelope.payload.solana.transactionSignature)}${clusterQuery}`, envelope.payload.solana.transactionSignature)}</dd></div>` : ""}
 ${envelope.payload.solana.programId ? `<div><dt>Program account</dt><dd>${externalLink(`${explorerBase}/address/${encodeURIComponent(envelope.payload.solana.programId)}${clusterQuery}`, envelope.payload.solana.programId)}</dd></div>` : ""}
+${envelope.payload.solana.memo ? `<div><dt>Memo anchor</dt><dd><code>${escape(envelope.payload.solana.memo)}</code></dd></div>` : ""}
+${envelope.payload.verifiedBuildUrl ? `<div><dt>Verified build</dt><dd>${externalLink(envelope.payload.verifiedBuildUrl, envelope.payload.verifiedBuildUrl)}</dd></div>` : ""}
 ${envelope.payload.demoUrl ? `<div><dt>Live demo</dt><dd>${externalLink(envelope.payload.demoUrl, envelope.payload.demoUrl)}</dd></div>` : ""}
 </dl></section>
 <section aria-labelledby="verification-title"><h2 id="verification-title">Verification</h2><p class="meta">Checked at <time datetime="${escape(result.verifiedAt)}">${escape(result.verifiedAt)}</time></p><div class="table-wrap"><table><caption>Verification checks</caption><thead><tr><th scope="col">Check</th><th scope="col">Status</th><th scope="col">What the verifier found</th></tr></thead><tbody>${rows}</tbody></table></div></section>

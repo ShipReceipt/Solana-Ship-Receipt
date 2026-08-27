@@ -30,14 +30,18 @@ Commands:
   sign     RECEIPT.json --keypair PATH [--out PATH]  (default: RECEIPT.signed.json)
   verify   RECEIPT.json [--network] [--json]
   render   RECEIPT.json [--out PATH] [--network]
-  serve    RECEIPT.json [--port PORT] [--network]
+  serve    RECEIPT.json [--port PORT] [--network] [--host HOST] [--public]
   bundle   RECEIPT.json --out-dir DIR [--network]
   audit    BUNDLE_DIR [--json]
   sample   [--out PATH]
 
 Create options:
   --cluster mainnet|devnet|testnet   (default: devnet)
-  --rpc URL --tx SIGNATURE --program PROGRAM_ID --demo URL --keypair PATH --out PATH
+  --rpc URL --tx SIGNATURE --program PROGRAM_ID --memo HASH --verified-build-url URL --demo URL --keypair PATH --out PATH
+
+Serve options:
+  --host 127.0.0.1|0.0.0.0   (default: 127.0.0.1)
+  --public                     (explicit opt-in for non-loopback hosting; not enabled by default)
 
 Notes:
   --commit requires the full 40-character Git SHA (try: git rev-parse HEAD)
@@ -59,6 +63,8 @@ const COMMAND_OPTIONS = {
     "rpc",
     "tx",
     "program",
+    "memo",
+    "verified-build-url",
     "demo",
     "out",
     "keypair",
@@ -66,7 +72,7 @@ const COMMAND_OPTIONS = {
   sign: new Set(["keypair", "out"]),
   verify: new Set(["network", "json"]),
   render: new Set(["out", "network"]),
-  serve: new Set(["port", "network"]),
+  serve: new Set(["port", "network", "host", "public"]),
   bundle: new Set(["out-dir", "network"]),
   audit: new Set(["json"]),
   sample: new Set(["out"]),
@@ -172,6 +178,8 @@ try {
       rpcUrl: args.rpc,
       transactionSignature: args.tx,
       programId: args.program,
+      memo: args.memo,
+      verifiedBuildUrl: args["verified-build-url"],
       demoUrl: args.demo,
     });
     let envelope = createEnvelope(payload);
@@ -227,10 +235,13 @@ try {
     const port = args.port === undefined ? 8787 : Number(args.port);
     if (!Number.isInteger(port) || port < 0 || port > 65535)
       throw new Error("--port must be an integer from 0 to 65535");
+    const host = args.host || "127.0.0.1";
     const viewer = await startViewer({
       envelope: await readJson(input),
       port,
+      host,
       network: args.network,
+      allowPublicHost: Boolean(args.public),
     });
     console.log(`Serving ${input} at ${viewer.url}`);
     await new Promise(() => {});

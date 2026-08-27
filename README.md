@@ -162,15 +162,15 @@ node src/cli.mjs serve ship-receipt.json
 node src/cli.mjs serve ship-receipt.json --network --port 8787
 ```
 
-The viewer binds only to `127.0.0.1` and exposes:
+The default viewer binds only to `127.0.0.1` and exposes:
 
 - `/` — reviewer HTML
+- `/review` — hosted receipt verification page
 - `/api/receipt` — canonical receipt JSON
 - `/api/verification` — verification result JSON
+- `/api/verify` — POST endpoint that accepts a receipt JSON and returns the verification result
 
-Only `GET` and `HEAD` are accepted. Responses disable caching, framing,
-unneeded browser capabilities, and cross-origin resource use through explicit
-security headers.
+Only `GET`, `HEAD`, and the explicit verification `POST` are accepted. Public hosting is intentionally disabled by default and requires an explicit opt-in such as `--host 0.0.0.0 --public` after the release gate in `docs/THREAT-MODEL.md` is satisfied. Responses disable caching, framing, unneeded browser capabilities, and cross-origin resource use through explicit security headers.
 
 ## Add a wallet attestation
 

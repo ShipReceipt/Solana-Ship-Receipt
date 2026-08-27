@@ -1,0 +1,30 @@
+name: Deploy public verifier
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate test suite
+        run: npm test
+
+      - name: Create sample receipt
+        run: node src/cli.mjs sample --out sample.receipt.json
+
+      - name: Publish placeholder verifier
+        run: echo "Public verifier deployment is intentionally gated by the repo security model; use the explicit --public opt-in only after the release gate passes."

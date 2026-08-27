@@ -35,7 +35,10 @@
     "check:syntax": "node --check src/base58.mjs && node --check src/bundle.mjs && node --check src/cli.mjs && node --check src/receipt.mjs && node --check src/viewer.mjs",
     "test": "node --test",
     "test:coverage": "node --experimental-test-coverage --test",
-    "sample": "node src/cli.mjs sample"
+    "sample": "node src/cli.mjs sample",
+    "serve:local": "node src/cli.mjs serve sample.receipt.json --port 8787",
+    "serve:public": "node src/cli.mjs serve sample.receipt.json --host 0.0.0.0 --port 8787 --network --public",
+    "deploy:public": "node src/cli.mjs sample --out sample.receipt.json && node src/cli.mjs serve sample.receipt.json --host 0.0.0.0 --port 8787 --network --public"
   },
   "engines": {
     "node": ">=20"

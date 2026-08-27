@@ -1,0 +1,65 @@
+# Public verifier deployment guide
+
+This repository intentionally keeps the default verifier loopback-only. A public verifier requires an explicit opt-in and a review of the deployment gate before using `--host 0.0.0.0 --public`.
+
+## Release gate
+
+Before exposing the verifier to the public internet, confirm all of the following:
+
+- The service is read-only and never accepts or stores private keys.
+- The service is bound only to the intended public host and requires explicit `--public` opt-in.
+- Outbound HTTP(S) checks are subject to the same SSRF protections in the repo: no credentials, no loopback/private/reserved destinations, and redirect validation.
+- Response bodies are bounded and untrusted values are escaped in rendered HTML.
+- The deployment has rate limiting, concurrency limits, and structured audit logs without secrets.
+- The public host is behind a reverse proxy or load balancer with TLS termination and a documented rollback plan.
+- The service is tested with the same suite in this repository and passes the release gate in `docs/THREAT-MODEL.md`.
+
+## Minimal public verifier command
+
+Run the local viewer as a public verifier only after the release gate is satisfied:
+
+```powershell
+node src/cli.mjs serve ship-receipt.json --host 0.0.0.0 --port 8787 --network --public
+```
+
+This is intentionally different from the default local workflow:
+
+```powershell
+node src/cli.mjs serve ship-receipt.json
+```
+
+The default remains loopback-only and is the safe path for local development.
+
+## Reverse proxy example
+
+A production deployment should place the service behind TLS termination and keep the application bound to a private listener, for example:
+
+```nginx
+server {
+  listen 443 ssl http2;
+  server_name verifier.example.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:8787;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+  }
+}
+```
+
+This keeps the verifier behind a standard edge layer while preserving the repo’s explicit public-host opt-in requirement in the application itself.
+
+## Operational guidance
+
+- Keep the verifier stateless and single-purpose.
+- Do not use the public verifier as a signing endpoint.
+- Keep all inbound submissions read-only and ephemeral.
+- Keep the deployment logs free of receipt secrets, wallet keys, or full HTTP request bodies.
+- Treat old verification results as observations, not current liveness guarantees.
+
+## Reference
+
+- `docs/THREAT-MODEL.md` for the security boundaries and release gates
+- `README.md` for the local CLI workflow
+- `src/viewer.mjs` for the bound-host enforcement and public opt-in behavior
