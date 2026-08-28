@@ -79,27 +79,23 @@ export async function startViewer({
   <title>Local viewer · Solana Ship Receipt</title>
   <style>
     :root {
-      --bg: #050d0b;
-      --bg-2: #071912;
-      --panel: rgba(8, 18, 15, 0.82);
-      --panel-alt: rgba(14, 29, 25, 0.9);
-      --line: rgba(126, 231, 193, 0.22);
-      --text: #edfdf8;
-      --muted: #b9d9cf;
-      --brand: #14f195;
-      --brand-2: #9ae6ff;
-      --brand-soft: rgba(20, 241, 149, 0.12);
-      --shadow: 0 32px 70px rgba(2, 9, 8, 0.55);
+      --bg: #0b0d0c;
+      --panel: #111513;
+      --panel-alt: #171c19;
+      --line: #34413a;
+      --text: #f2f4ed;
+      --muted: #aeb8b0;
+      --brand: #b6f23b;
+      --brand-2: #d9ff91;
+      --brand-soft: rgba(182, 242, 59, 0.1);
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Trebuchet MS", Verdana, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at top, rgba(20, 241, 149, 0.16), transparent 25%),
-        radial-gradient(circle at right, rgba(154, 230, 255, 0.14), transparent 20%),
-        linear-gradient(180deg, var(--bg) 0%, #07120f 100%);
+      background: var(--bg);
     }
     .page {
       width: min(1080px, calc(100% - 2rem));
@@ -110,19 +106,9 @@ export async function startViewer({
       overflow: hidden;
       padding: 1.25rem;
       border: 1px solid var(--line);
-      border-radius: 26px;
-      background: linear-gradient(180deg, rgba(10, 18, 15, 0.86), rgba(7, 16, 12, 0.92));
+      border-radius: 8px;
+      background: var(--panel);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
-    }
-    .shell::before {
-      content: "";
-      position: absolute;
-      inset: -35% auto auto -15%;
-      width: 340px;
-      height: 340px;
-      background: radial-gradient(circle, rgba(20, 241, 149, 0.16), transparent 60%);
-      pointer-events: none;
     }
     .header {
       display: flex;
@@ -146,16 +132,15 @@ export async function startViewer({
     .brand-mark {
       width: 12px;
       height: 12px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      box-shadow: 0 0 18px rgba(20, 241, 149, 0.9);
+      border-radius: 2px;
+      background: var(--brand);
     }
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.55rem;
       border: 1px solid rgba(20, 241, 149, 0.45);
-      border-radius: 999px;
+      border-radius: 3px;
       background: var(--brand-soft);
       padding: 0.48rem 0.8rem;
       color: var(--brand);
@@ -169,7 +154,7 @@ export async function startViewer({
       height: 0.55rem;
       border-radius: 50%;
       background: var(--brand);
-      box-shadow: 0 0 14px rgba(20, 241, 149, 0.9);
+      box-shadow: none;
     }
     .content {
       display: grid;
@@ -180,16 +165,17 @@ export async function startViewer({
       z-index: 1;
     }
     .card {
-      background: linear-gradient(180deg, rgba(17, 33, 28, 0.9), rgba(10, 19, 16, 0.94));
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 22px;
+      border-radius: 6px;
       padding: 1.6rem;
     }
     h1 {
       margin: 0 0 0.7rem;
-      font-size: clamp(2.25rem, 5vw, 3.4rem);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 3rem;
       line-height: 1.04;
-      letter-spacing: -0.06em;
+      letter-spacing: 0;
     }
     .lede {
       margin: 0 0 1.2rem;
@@ -212,12 +198,12 @@ export async function startViewer({
       margin-bottom: 1rem;
       background: rgba(4, 12, 10, 0.72);
       border: 1px solid rgba(154, 230, 255, 0.18);
-      border-radius: 16px;
+      border-radius: 4px;
       padding: 1rem 1rem 0.95rem;
       resize: vertical;
       color: var(--text);
       font: 0.9rem/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: none;
     }
     textarea::placeholder {
       color: rgba(185, 217, 207, 0.7);
@@ -242,7 +228,7 @@ export async function startViewer({
     .feature {
       background: rgba(10, 17, 14, 0.9);
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: 4px;
       padding: 1rem;
     }
     .feature small {
@@ -266,13 +252,13 @@ export async function startViewer({
     button {
       appearance: none;
       border: 0;
-      border-radius: 12px;
+      border-radius: 4px;
       padding: 0.8rem 1.1rem;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      background: var(--brand);
       color: #04120d;
       font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 16px 26px rgba(20, 241, 149, 0.2);
+      box-shadow: none;
     }
     .meta {
       display: grid;
@@ -280,8 +266,8 @@ export async function startViewer({
     }
     .stat {
       border: 1px solid var(--line);
-      border-radius: 16px;
-      background: linear-gradient(180deg, rgba(19, 36, 31, 0.94), rgba(8, 17, 13, 0.94));
+      border-radius: 4px;
+      background: var(--panel-alt);
       padding: 1rem 1.1rem;
     }
     .stat strong {
@@ -305,6 +291,7 @@ export async function startViewer({
       .page { width: min(100% - 1rem, 1080px); margin: 1.25rem auto; }
       .header { flex-direction: column; align-items: flex-start; }
       .content { grid-template-columns: 1fr; }
+      h1 { font-size: 2.25rem; }
     }
   </style>
 </head>
@@ -349,27 +336,23 @@ export async function startViewer({
   <title>Verify receipt · Solana Ship Receipt</title>
   <style>
     :root {
-      --bg: #050d0b;
-      --bg-2: #071912;
-      --panel: rgba(8, 18, 15, 0.82);
-      --line: rgba(126, 231, 193, 0.22);
-      --text: #edfdf8;
-      --muted: #b9d9cf;
-      --brand: #14f195;
-      --brand-2: #9ae6ff;
-      --brand-soft: rgba(20, 241, 149, 0.12);
-      --shadow: 0 32px 70px rgba(2, 9, 8, 0.55);
+      --bg: #0b0d0c;
+      --panel: #111513;
+      --line: #34413a;
+      --text: #f2f4ed;
+      --muted: #aeb8b0;
+      --brand: #b6f23b;
+      --brand-2: #d9ff91;
+      --brand-soft: rgba(182, 242, 59, 0.1);
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
       --danger: #ffb0ac;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
     body {
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Trebuchet MS", Verdana, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(circle at top, rgba(20, 241, 149, 0.16), transparent 25%),
-        radial-gradient(circle at right, rgba(154, 230, 255, 0.14), transparent 20%),
-        linear-gradient(180deg, var(--bg) 0%, #07120f 100%);
+      background: var(--bg);
     }
     .page {
       width: min(1080px, calc(100% - 2rem));
@@ -380,10 +363,9 @@ export async function startViewer({
       overflow: hidden;
       padding: 1.25rem;
       border: 1px solid var(--line);
-      border-radius: 26px;
-      background: linear-gradient(180deg, rgba(10, 18, 15, 0.86), rgba(7, 16, 12, 0.92));
+      border-radius: 8px;
+      background: var(--panel);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
     }
     .header {
       display: flex;
@@ -407,16 +389,15 @@ export async function startViewer({
     .brand-mark {
       width: 12px;
       height: 12px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
-      box-shadow: 0 0 18px rgba(20, 241, 149, 0.9);
+      border-radius: 2px;
+      background: var(--brand);
     }
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.55rem;
       border: 1px solid rgba(154, 230, 255, 0.45);
-      border-radius: 999px;
+      border-radius: 3px;
       background: rgba(154, 230, 255, 0.08);
       padding: 0.48rem 0.8rem;
       color: var(--brand-2);
@@ -430,19 +411,20 @@ export async function startViewer({
       height: 0.55rem;
       border-radius: 50%;
       background: var(--brand-2);
-      box-shadow: 0 0 14px rgba(154, 230, 255, 0.9);
+      box-shadow: none;
     }
     .card {
-      background: linear-gradient(180deg, rgba(17, 33, 28, 0.9), rgba(10, 19, 16, 0.94));
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 22px;
+      border-radius: 6px;
       padding: 1.6rem;
     }
     h1 {
       margin: 0 0 0.7rem;
-      font-size: clamp(2.25rem, 5vw, 3.4rem);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 3rem;
       line-height: 1.04;
-      letter-spacing: -0.06em;
+      letter-spacing: 0;
     }
     .lede {
       margin: 0 0 1.2rem;
@@ -465,12 +447,12 @@ export async function startViewer({
       margin-bottom: 1rem;
       background: rgba(4, 12, 10, 0.72);
       border: 1px solid rgba(154, 230, 255, 0.18);
-      border-radius: 16px;
+      border-radius: 4px;
       padding: 1rem 1rem 0.95rem;
       resize: vertical;
       color: var(--text);
       font: 0.9rem/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: none;
     }
     textarea::placeholder {
       color: rgba(185, 217, 207, 0.7);
@@ -505,13 +487,13 @@ export async function startViewer({
     button {
       appearance: none;
       border: 0;
-      border-radius: 12px;
+      border-radius: 4px;
       padding: 0.8rem 1.1rem;
-      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      background: var(--brand);
       color: #04120d;
       font-weight: 900;
       cursor: pointer;
-      box-shadow: 0 16px 26px rgba(20, 241, 149, 0.2);
+      box-shadow: none;
     }
     .error {
       color: var(--danger);
@@ -527,6 +509,7 @@ export async function startViewer({
       .header { flex-direction: column; align-items: flex-start; }
       .feature-grid { grid-template-columns: 1fr; }
       .status-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      h1 { font-size: 2.25rem; }
     }
     @media (max-width: 420px) {
       .status-guide { grid-template-columns: 1fr; }
