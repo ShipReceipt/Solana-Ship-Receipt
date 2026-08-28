@@ -312,6 +312,8 @@ request logs without receipt contents.
 
 Delivery goals and acceptance criteria are tracked in
 [`docs/MILESTONES.md`](docs/MILESTONES.md).
+The builder and reviewer session protocol is documented in
+[`docs/USER-TESTING.md`](docs/USER-TESTING.md).
 
 Contribution and vulnerability-reporting procedures are documented in
 [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).

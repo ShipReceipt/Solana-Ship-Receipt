@@ -1319,6 +1319,24 @@ test("getting started guide covers first use and reviewer handoff", async () => 
     assert.match(guide, new RegExp(required.replaceAll(".", "\\."), "i"));
 });
 
+test("user testing guide defines the public MVP acceptance sessions", async () => {
+  const guide = await readFile(
+    join(process.cwd(), "docs", "USER-TESTING.md"),
+    "utf8",
+  );
+  for (const required of [
+    "## Success criteria",
+    "Five builders",
+    "Two reviewers",
+    "under two minutes",
+    "evidence-reconciliation",
+    "seed phrase",
+    "B5",
+    "R2",
+  ])
+    assert.match(guide, new RegExp(required.replaceAll(".", "\\."), "i"));
+});
+
 test("RPC checks expose bounded evidence and flag failed transactions", async () => {
   const payload = createPayload({
     projectTitle: "RPC evidence",
