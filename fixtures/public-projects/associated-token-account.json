@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Associated Token Account Program",
+    "projectDescription": "A public Solana Associated Token Account program fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/solana-program/associated-token-account",
+      "commit": "c0c821e7792054c1034ff368f33cc593ccdb425e"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+    },
+    "createdAt": "2026-08-28T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000004"
+  },
+  "receiptHash": "8eaf8c6a9e0714a768f5e31bcedb22174b26e50b0cd95c2babdce4eb37955781"
+}

@@ -240,9 +240,9 @@ existing artifacts and reporting unchecked evidence accurately.
 ## Fixtures and testing
 
 `fixtures/public-projects/` contains deterministic receipts pinned to public
-revisions of Anchor, Metaplex Token Metadata, Solana Program Library, and
-Solana Memo. The Metaplex, Solana Program Library, and Solana Memo fixtures
-also include known devnet executable program accounts.
+revisions of Metaplex Token Metadata, Solana Program Library, Solana Memo,
+Associated Token Account, and Solana Token Program. All five fixtures include
+known devnet executable program accounts.
 Offline tests validate their receipt integrity; public network checks remain
 separate because third-party APIs and RPC services may be temporarily
 unavailable.

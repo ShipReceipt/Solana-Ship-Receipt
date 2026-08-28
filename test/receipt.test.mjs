@@ -2358,5 +2358,5 @@ test("ships five reproducible receipts from public Solana repositories", async (
     repositories.add(envelope.payload.repository.url);
   }
   assert.equal(repositories.size, 5);
-  assert.equal(programEvidence, 3);
+  assert.equal(programEvidence, 5);
 });

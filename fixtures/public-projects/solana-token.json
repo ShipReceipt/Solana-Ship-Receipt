@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Solana Token Program",
+    "projectDescription": "A public Solana Token program fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/solana-program/token",
+      "commit": "eb074cf0874d3037df77b6e6b7d1f286193096b8"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    "createdAt": "2026-08-28T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000001"
+  },
+  "receiptHash": "53f05fb81142913da671d066053ead31aeb2635716e9b09519260e0c782536eb"
+}

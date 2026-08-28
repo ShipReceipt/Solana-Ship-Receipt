@@ -125,16 +125,16 @@ export async function startViewer({
   <title>Local viewer · Solana Ship Receipt</title>
   <style>
     :root {
-      --bg: #0b0d0c;
-      --panel: #111513;
-      --panel-alt: #171c19;
-      --line: #34413a;
-      --text: #f2f4ed;
-      --muted: #aeb8b0;
-      --brand: #b6f23b;
-      --brand-2: #d9ff91;
-      --brand-soft: rgba(182, 242, 59, 0.1);
-      --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+      --bg: #0a0a0f;
+      --panel: #111118;
+      --panel-alt: #15151e;
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #f4f3f8;
+      --muted: #92909f;
+      --brand: #14f195;
+      --brand-2: #9945ff;
+      --brand-soft: rgba(20, 241, 149, 0.1);
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; min-height: 100%; }
@@ -144,8 +144,8 @@ export async function startViewer({
       background: var(--bg);
     }
     .page {
-      width: min(1080px, calc(100% - 2rem));
-      margin: 4rem auto;
+      width: min(760px, calc(100% - 2rem));
+      margin: 2rem auto;
     }
     .shell {
       position: relative;
@@ -174,19 +174,20 @@ export async function startViewer({
       font-size: 0.72rem;
       font-weight: 800;
       color: var(--brand);
+      font-family: "SFMono-Regular", Consolas, monospace;
     }
     .brand-mark {
       width: 12px;
       height: 12px;
       border-radius: 2px;
-      background: var(--brand);
+      background: linear-gradient(135deg, var(--brand-2), var(--brand));
     }
     .status-pill {
       display: inline-flex;
       align-items: center;
       gap: 0.55rem;
       border: 1px solid rgba(20, 241, 149, 0.45);
-      border-radius: 3px;
+      border-radius: 999px;
       background: var(--brand-soft);
       padding: 0.48rem 0.8rem;
       color: var(--brand);
@@ -200,7 +201,7 @@ export async function startViewer({
       height: 0.55rem;
       border-radius: 50%;
       background: var(--brand);
-      box-shadow: none;
+      box-shadow: 0 0 10px rgba(20, 241, 149, 0.45);
     }
     .content {
       display: grid;
@@ -211,7 +212,7 @@ export async function startViewer({
       z-index: 1;
     }
     .card {
-      background: var(--panel);
+      background: var(--panel-alt);
       border: 1px solid var(--line);
       border-radius: 6px;
       padding: 1.6rem;
@@ -219,9 +220,13 @@ export async function startViewer({
     h1 {
       margin: 0 0 0.7rem;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: 3rem;
+      font-size: 2.8rem;
       line-height: 1.04;
       letter-spacing: 0;
+      background: linear-gradient(90deg, var(--brand-2), var(--brand));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
     .lede {
       margin: 0 0 1.2rem;
@@ -300,7 +305,7 @@ export async function startViewer({
       border: 0;
       border-radius: 4px;
       padding: 0.8rem 1.1rem;
-      background: var(--brand);
+      background: var(--brand-2);
       color: #04120d;
       font-weight: 900;
       cursor: pointer;
@@ -334,7 +339,7 @@ export async function startViewer({
       line-height: 1.6;
     }
     @media (max-width: 760px) {
-      .page { width: min(100% - 1rem, 1080px); margin: 1.25rem auto; }
+      .page { width: min(100% - 1rem, 760px); margin: 1.25rem auto; }
       .header { flex-direction: column; align-items: flex-start; }
       .content { grid-template-columns: 1fr; }
       h1 { font-size: 2.25rem; }
