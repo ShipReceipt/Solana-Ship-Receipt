@@ -6,6 +6,8 @@ import {
   verifyEnvelope,
 } from "./receipt.mjs";
 
+const MAX_REQUEST_BODY_BYTES = 2 * 1024 * 1024;
+
 function securityHeaders(contentType) {
   return {
     "content-type": contentType,
@@ -51,6 +53,31 @@ function parseRequestBody(rawBody, contentType) {
 function send(response, status, headers, body) {
   response.writeHead(status, headers);
   response.end(body);
+}
+
+async function readRequestBody(request) {
+  const declaredLength = Number(request.headers["content-length"]);
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BODY_BYTES) {
+    const error = new Error(
+      `Request body exceeds ${MAX_REQUEST_BODY_BYTES} bytes`,
+    );
+    error.statusCode = 413;
+    throw error;
+  }
+  const chunks = [];
+  let total = 0;
+  for await (const chunk of request) {
+    total += chunk.length;
+    if (total > MAX_REQUEST_BODY_BYTES) {
+      const error = new Error(
+        `Request body exceeds ${MAX_REQUEST_BODY_BYTES} bytes`,
+      );
+      error.statusCode = 413;
+      throw error;
+    }
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 export async function startViewer({
@@ -575,12 +602,28 @@ export async function startViewer({
     }
 
     const path = new URL(request.url || "/", `http://${host}`).pathname;
+    if (path === "/health") {
+      if (method !== "GET" && method !== "HEAD") {
+        send(
+          response,
+          405,
+          { ...securityHeaders("text/plain; charset=utf-8"), allow: "GET, HEAD" },
+          "Method Not Allowed",
+        );
+        return;
+      }
+      send(
+        response,
+        200,
+        securityHeaders("application/json; charset=utf-8"),
+        method === "HEAD" ? "" : JSON.stringify({ status: "ok" }),
+      );
+      return;
+    }
     if (path === "/") {
       if (method === "POST") {
         try {
-          const chunks = [];
-          for await (const chunk of request) chunks.push(Buffer.from(chunk));
-          const rawBody = Buffer.concat(chunks).toString("utf8");
+          const rawBody = await readRequestBody(request);
           const contentType = request.headers["content-type"] || "";
           const parsed = parseRequestBody(rawBody, contentType);
           let envelopeCandidate;
@@ -632,7 +675,7 @@ export async function startViewer({
         } catch (error) {
           send(
             response,
-            400,
+            error.statusCode || 400,
             securityHeaders("text/plain; charset=utf-8"),
             `Invalid receipt JSON: ${error.message}`,
           );
@@ -651,9 +694,7 @@ export async function startViewer({
     if (path === "/review") {
       if (method === "POST") {
         try {
-          const chunks = [];
-          for await (const chunk of request) chunks.push(Buffer.from(chunk));
-          const rawBody = Buffer.concat(chunks).toString("utf8");
+          const rawBody = await readRequestBody(request);
           const contentType = request.headers["content-type"] || "";
           const parsed = parseRequestBody(rawBody, contentType);
           const submitEnvelope =
@@ -684,7 +725,7 @@ export async function startViewer({
         } catch (error) {
           send(
             response,
-            400,
+            error.statusCode || 400,
             securityHeaders("text/html; charset=utf-8"),
             method === "HEAD" ? "" : `<div class="error">Invalid receipt: ${error.message}</div>`,
           );
@@ -748,9 +789,7 @@ export async function startViewer({
         return;
       }
       try {
-        const chunks = [];
-        for await (const chunk of request) chunks.push(Buffer.from(chunk));
-        const rawBody = Buffer.concat(chunks).toString("utf8");
+        const rawBody = await readRequestBody(request);
         const contentType = request.headers["content-type"] || "";
         const parsed = parseRequestBody(rawBody, contentType);
         const submitEnvelope = parsed && typeof parsed === "object" && !Array.isArray(parsed)
@@ -784,7 +823,7 @@ export async function startViewer({
       } catch (error) {
         send(
           response,
-          400,
+          error.statusCode || 400,
           securityHeaders("application/json; charset=utf-8"),
           JSON.stringify({
             passed: false,

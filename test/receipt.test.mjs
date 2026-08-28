@@ -1471,6 +1471,32 @@ test("public verification API accepts a receipt payload and returns structured c
   }
 });
 
+test("viewer rejects oversized verification requests before parsing", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Request limits",
+    projectDescription: "A project used to exercise request body limits.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const viewer = await startViewer({
+    envelope: createEnvelope(payload),
+    port: 0,
+    network: false,
+  });
+  try {
+    const response = await fetch(`${viewer.url}api/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ receipt: "x".repeat(2 * 1024 * 1024) }),
+    });
+    assert.equal(response.status, 413);
+    assert.match(await response.text(), /exceeds 2097152 bytes/i);
+  } finally {
+    await viewer.close();
+  }
+});
+
 test("public reviewer page exposes a hosted verification form", async () => {
   const { startViewer } = await import("../src/viewer.mjs");
   const payload = createPayload({
@@ -1611,6 +1637,11 @@ test("local viewer is loopback-only, read-only, and exposes HTML plus JSON", asy
       "camera=(), microphone=(), geolocation=()",
     );
     assert.match(await page.text(), /Local viewer/);
+
+    const health = await fetch(`${viewer.url}health`);
+    assert.equal(health.status, 200);
+    assert.equal(health.headers.get("content-type"), "application/json; charset=utf-8");
+    assert.deepEqual(await health.json(), { status: "ok" });
 
     const receiptResponse = await fetch(`${viewer.url}api/receipt`);
     assert.equal(receiptResponse.status, 200);

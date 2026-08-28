@@ -1,7 +1,8 @@
 # Threat model
 
-This document defines the security boundary for the local CLI and the future
-read-only hosted verifier. A receipt establishes evidence provenance; it does
+This document defines the security boundary for the local CLI and the
+read-only hosted verifier. A demonstration instance is deployed at
+https://solana-ship-receipt.onrender.com/. A receipt establishes evidence provenance; it does
 not establish that the referenced software is safe.
 
 ## Assets
@@ -31,7 +32,8 @@ wrong public keys.
 
 The CLI reads a Solana CLI keypair only during local signing. It never prints,
 stores, uploads, or requests a seed phrase. The GitHub Action never signs.
-Hosted services must not accept private keys at all.
+Hosted services must not accept private keys at all. The current hosted
+instance is read-only and does not store submitted receipts.
 
 ### SSRF and unsafe redirect
 
@@ -46,7 +48,7 @@ revalidation, response-size limits, and request timeouts.
 The verifier consumes only bounded JSON/HTTP metadata and never executes code
 from a repository, demo, or RPC response. JSON responses are capped at 256 KiB;
 demo response bodies are discarded after status and redirect checks. HTML
-output escapes all untrusted values. Future hosted endpoints must retain
+output escapes all untrusted values. Hosted endpoints must retain
 equivalent response limits and reject unexpected content types.
 
 ### Replay or stale evidence

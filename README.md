@@ -149,6 +149,12 @@ The versioned receipt contract is documented in
 
 ## Render or serve a receipt
 
+The hosted reviewer is available at
+[solana-ship-receipt.onrender.com](https://solana-ship-receipt.onrender.com/).
+Open `/review` to verify a receipt without installing the CLI. The hosted
+instance is a read-only demonstration verifier; it does not sign receipts,
+store submissions, or prove project security.
+
 Render a standalone HTML document:
 
 ```powershell
@@ -166,6 +172,7 @@ The default viewer binds only to `127.0.0.1` and exposes:
 
 - `/` — reviewer HTML
 - `/review` — hosted receipt verification page
+- `/health` — lightweight deployment health response
 - `/api/receipt` — canonical receipt JSON
 - `/api/verification` — verification result JSON
 - `/api/verify` — POST endpoint that accepts a receipt JSON and returns the verification result
@@ -278,18 +285,21 @@ Important limitations:
   consensus proof.
 - A verification timestamp records when checks ran; it does not guarantee
   future availability.
-- The included server is a local viewer, not a production-hosted verifier.
+- The included server is a read-only verifier and is deployed publicly for
+  demonstration at the Render URL above. Production operation still requires
+  the additional controls in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 See the full [threat model](docs/THREAT-MODEL.md) before deploying any hosted
 service.
 
 ## Project status
 
-This repository contains the local MVP: receipt schema, CLI, verifier, wallet
-attestation, public evidence checks, HTML renderer, loopback viewer, reviewer
-bundle, offline auditor, fixtures, GitHub Actions workflow, and agent skill.
-Future hosted deployment remains gated by the controls documented in the
-threat model.
+This repository contains the MVP: receipt schema, CLI, verifier, wallet
+attestation, public evidence checks, HTML renderer, loopback viewer, hosted
+reviewer, reviewer bundle, offline auditor, fixtures, GitHub Actions workflow,
+and agent skill. The hosted Render instance is available for review; rate
+limiting, structured operational logs, and a production rollback process
+remain release-hardening work.
 
 Delivery goals and acceptance criteria are tracked in
 [`docs/MILESTONES.md`](docs/MILESTONES.md).

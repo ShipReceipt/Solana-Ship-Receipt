@@ -2,6 +2,15 @@
 
 This repository intentionally keeps the default verifier loopback-only. A public verifier requires an explicit opt-in and a review of the deployment gate before using `--host 0.0.0.0 --public`.
 
+## Current hosted instance
+
+A demonstration deployment is live at
+https://solana-ship-receipt.onrender.com/. Its reviewer form is available at
+`/review`. The instance is read-only and does not accept private keys or store
+submitted receipts. Configure the platform health check to use `/health`.
+Treat it as a public demo until the operational controls listed below are
+complete.
+
 ## Release gate
 
 Before exposing the verifier to the public internet, confirm all of the following:
