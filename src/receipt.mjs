@@ -1121,6 +1121,13 @@ export function renderHtml(envelope, result) {
   const overallMessage = result.passed
     ? `${counts.verified} verified, ${counts.warning} warnings, ${counts.not_checked} not checked`
     : `${counts.failed} failed, ${counts.warning} warnings, ${counts.not_checked} not checked`;
+  const checkStatus = (name) =>
+    result.checks.find((check) => check.name === name)?.status || "not_checked";
+  const walletAddress = envelope.attestation?.publicKey || "No wallet connected";
+  const walletBadge = walletAddress.length > 18
+    ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}`
+    : walletAddress;
+  const attestationSignature = envelope.attestation?.signature || "No wallet signature supplied";
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -1142,6 +1149,13 @@ body{background:var(--bg);font-family:"Trebuchet MS",Verdana,sans-serif}.receipt
 @media(max-width:720px){.hero{padding:2.5rem 1.5rem 1.5rem}.hero:before{left:1.5rem}.content{padding:1.5rem}.content section+section{padding-top:1.5rem}footer{padding:1.25rem 1.5rem}}
 @media(print){:root{--bg:#fff;--surface:#fff;--surface-muted:#f7f9f8;--text:#10231d;--muted:#5d6d67;--border:#d7e0dc;--brand:#0a7a55}.hero:before{display:none}}
 </style>
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--surface-muted:#15151e;--text:#f4f3f8;--muted:#92909f;--border:rgba(255,255,255,.08);--purple:#9945ff;--green:#14f195;--warning:#f5a623;--unchecked:#6e6e8a;--shadow:0 24px 60px rgba(0,0,0,.35)}
+body{background:var(--bg);font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--text)}.page{width:min(760px,calc(100% - 2rem));margin:2rem auto}.receipt{background:rgba(17,17,24,.92);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);backdrop-filter:blur(14px)}.hero{display:block;padding:2rem;border-bottom:1px solid var(--border);background:transparent}.hero:before{display:none}.eyebrow{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:0 0 1.25rem;color:var(--muted);font-family:"SFMono-Regular",Consolas,monospace;font-size:.7rem;letter-spacing:.1em}.eyebrow:after{content:"${escape(walletBadge)}";padding:.45rem .65rem;border:1px solid var(--border);border-radius:999px;color:var(--green);letter-spacing:0;font-size:.68rem}.hero h1{max-width:none;margin:0;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:2.8rem;font-weight:700;letter-spacing:0}.lede{max-width:58ch;margin:.8rem 0 0;color:var(--muted);font-size:.98rem}.overall{min-width:0;margin-top:1.5rem;padding:1rem;border:1px solid var(--border);border-radius:4px;background:var(--surface-muted)}.overall strong{margin-top:.5rem}.content{gap:1.5rem;padding:1.5rem 2rem;border-top:0}.content section+section{padding-top:1.5rem;border-top:1px solid var(--border)}section h2{margin-bottom:.8rem;font-family:"Trebuchet MS",Verdana,sans-serif;font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.evidence{grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;border:0;background:transparent;border-radius:0}.evidence div{display:block;padding:1rem;background:var(--surface-muted);border:1px solid var(--border);border-radius:4px}.evidence dt{margin-bottom:.65rem;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace;font-size:.65rem;letter-spacing:.1em}.evidence dd{font-family:"SFMono-Regular",Consolas,monospace;font-size:.78rem}.evidence dd a{display:block;overflow-wrap:anywhere}.status-badge{border-radius:3px;font-family:"SFMono-Regular",Consolas,monospace;font-size:.65rem;letter-spacing:.05em}.table-wrap{border-radius:4px}.hash{font-family:"SFMono-Regular",Consolas,monospace}.meta{color:var(--muted)}footer{padding:1.25rem 2rem;border-top:1px solid var(--border);color:var(--muted);font-style:italic;font-size:.8rem}
+@keyframes verified-pulse{0%,100%{box-shadow:0 0 0 0 rgba(20,241,149,0)}50%{box-shadow:0 0 0 4px rgba(20,241,149,.12)}}.status-badge.verified .status-dot{animation:verified-pulse 2.4s ease-in-out infinite;background:var(--green)}.status-badge.warning .status-dot{background:var(--warning);box-shadow:none}.status-badge.not_checked .status-dot{background:var(--unchecked);box-shadow:none}.status-badge.failed .status-dot{background:#ff6b61;box-shadow:none}
+@media(max-width:720px){.hero{padding:1.5rem}.hero h1{font-size:2.25rem}.content{padding:1.5rem}.evidence{grid-template-columns:1fr}footer{padding:1.25rem 1.5rem}}
+@media(print){:root{--bg:#fff;--surface:#fff;--surface-muted:#f7f9f8;--text:#10231d;--muted:#5d6d67;--border:#d7e0dc;--green:#0a7a55;--purple:#075d42}.receipt{box-shadow:none}.hero h1{background:none;color:var(--text)}}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to receipt</a>
@@ -1152,19 +1166,15 @@ body{background:var(--bg);font-family:"Trebuchet MS",Verdana,sans-serif}.receipt
 <aside class="overall" aria-live="polite"><span class="status-badge ${overallStatus}"><span aria-hidden="true" class="status-dot"></span>${escape(statusLabel(overallStatus))}</span><strong>${overallTitle}</strong><p>${overallMessage}</p></aside>
 </header>
 <div class="content">
-<section aria-labelledby="evidence-title"><h2 id="evidence-title">Pinned evidence</h2><dl class="evidence">
-<div><dt>Repository</dt><dd>${externalLink(repositoryUrl, repositoryUrl)}</dd></div>
-<div><dt>Exact commit</dt><dd>${externalLink(commitUrl, envelope.payload.repository.commit)}</dd></div>
-<div><dt>Solana cluster</dt><dd><code>${escape(envelope.payload.solana.cluster)}</code></dd></div>
-<div><dt>Created</dt><dd><time datetime="${escape(envelope.payload.createdAt)}">${escape(envelope.payload.createdAt)}</time></dd></div>
-${envelope.payload.solana.transactionSignature ? `<div><dt>Transaction</dt><dd>${externalLink(`${explorerBase}/tx/${encodeURIComponent(envelope.payload.solana.transactionSignature)}${clusterQuery}`, envelope.payload.solana.transactionSignature)}</dd></div>` : ""}
-${envelope.payload.solana.programId ? `<div><dt>Program account</dt><dd>${externalLink(`${explorerBase}/address/${encodeURIComponent(envelope.payload.solana.programId)}${clusterQuery}`, envelope.payload.solana.programId)}</dd></div>` : ""}
-${envelope.payload.solana.memo ? `<div><dt>Memo anchor</dt><dd><code>${escape(envelope.payload.solana.memo)}</code></dd></div>` : ""}
-${envelope.payload.verifiedBuildUrl ? `<div><dt>Verified build</dt><dd>${externalLink(envelope.payload.verifiedBuildUrl, envelope.payload.verifiedBuildUrl)}</dd></div>` : ""}
-${envelope.payload.demoUrl ? `<div><dt>Live demo</dt><dd>${externalLink(envelope.payload.demoUrl, envelope.payload.demoUrl)}</dd></div>` : ""}
+<section aria-labelledby="evidence-title"><h2 id="evidence-title">Evidence status</h2><dl class="evidence">
+<div><dt>Git commit</dt><dd><span class="status-badge ${checkStatus("github_commit")}"><span aria-hidden="true" class="status-dot"></span>${escape(statusLabel(checkStatus("github_commit")))}</span><br>${externalLink(commitUrl, envelope.payload.repository.commit)}</dd></div>
+<div><dt>Solana program</dt><dd><span class="status-badge ${checkStatus("solana_state")}"><span aria-hidden="true" class="status-dot"></span>${escape(statusLabel(checkStatus("solana_state")))}</span><br><code>${escape(envelope.payload.solana.programId || "No program ID supplied")}</code></dd></div>
+<div><dt>Demo URL</dt><dd><span class="status-badge ${checkStatus("demo_url")}"><span aria-hidden="true" class="status-dot"></span>${escape(statusLabel(checkStatus("demo_url")))}</span><br>${envelope.payload.demoUrl ? externalLink(envelope.payload.demoUrl, envelope.payload.demoUrl) : "No demo URL supplied"}</dd></div>
+<div><dt>Memo anchor</dt><dd><span class="status-badge ${checkStatus("solana_memo")}"><span aria-hidden="true" class="status-dot"></span>${escape(statusLabel(checkStatus("solana_memo")))}</span><br><code>${escape(envelope.payload.solana.memo || "No memo anchor supplied")}</code></dd></div>
 </dl></section>
+<section aria-labelledby="metadata-title"><h2 id="metadata-title">Receipt metadata</h2><dl class="evidence"><div><dt>Receipt hash</dt><dd><code>${escape(envelope.receiptHash)}</code></dd></div><div><dt>Timestamp</dt><dd><time datetime="${escape(envelope.payload.createdAt)}">${escape(envelope.payload.createdAt)}</time></dd></div><div><dt>Chain</dt><dd><code>${escape(envelope.payload.solana.cluster)}</code></dd></div></dl></section>
 <section aria-labelledby="verification-title"><h2 id="verification-title">Verification</h2><p class="meta">Checked at <time datetime="${escape(result.verifiedAt)}">${escape(result.verifiedAt)}</time></p><div class="table-wrap"><table><caption>Verification checks</caption><thead><tr><th scope="col">Check</th><th scope="col">Status</th><th scope="col">What the verifier found</th></tr></thead><tbody>${rows}</tbody></table></div></section>
-<section aria-labelledby="hash-title"><h2 id="hash-title">Receipt hash</h2><code class="hash">${escape(envelope.receiptHash)}</code><p class="note">This hash binds the canonical receipt payload. A wallet attestation, when present, proves control of the signing key—not project safety or endorsement.</p></section>
+<section aria-labelledby="hash-title"><h2 id="hash-title">Signature panel</h2><code class="hash">Canonical hash: ${escape(envelope.receiptHash)}<br>Wallet signature: ${escape(attestationSignature)}</code><p class="note">This hash binds the canonical receipt payload. A wallet attestation, when present, proves control of the signing key—not project safety or endorsement.</p></section>
 </div>
 <footer>This receipt proves only the checks listed above. It is not a security audit, financial recommendation, or endorsement.</footer>
 </main>

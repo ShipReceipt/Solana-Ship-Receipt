@@ -969,7 +969,7 @@ test("verification results and rendered receipts include the verification time",
   assert.match(html, /aria-live="polite"/);
   assert.match(html, /<time datetime="2026-08-23T12:34:56\.000Z">/);
   assert.match(html, /rel="noreferrer noopener"/);
-  assert.doesNotMatch(html, /gradient\(/i);
+  assert.match(html, /background:linear-gradient\(90deg,var\(--purple\),var\(--green\)\)/i);
   assert.doesNotMatch(html, /font-size:[^;]*vw/i);
   assert.doesNotMatch(html, /letter-spacing:-/i);
 });
