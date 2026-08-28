@@ -9,4 +9,4 @@ COPY . .
 
 EXPOSE 8787
 
-CMD ["npm", "run", "serve:public"]
+CMD ["npm", "run", "deploy:public"]
