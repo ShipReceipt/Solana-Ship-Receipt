@@ -1488,6 +1488,33 @@ test("public reviewer page exposes a hosted verification form", async () => {
     const html = await page.text();
     assert.match(html, /Verify receipt/i);
     assert.match(html, /\/api\/verify/i);
+    assert.match(html, /Verified/i);
+    assert.match(html, /Warning/i);
+    assert.match(html, /Failed/i);
+    assert.match(html, /Not checked/i);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("public reviewer page explains the core evidence flow", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Receipt flow",
+    projectDescription:
+      "A project used to exercise the reviewer onboarding copy.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({ envelope, port: 0, network: false });
+  try {
+    const page = await fetch(`${viewer.url}review`);
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.match(html, /Git commit/i);
+    assert.match(html, /On-chain evidence/i);
+    assert.match(html, /Wallet attestation/i);
   } finally {
     await viewer.close();
   }
