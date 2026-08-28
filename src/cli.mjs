@@ -272,10 +272,11 @@ try {
     const payload = createPayload({
       projectTitle: "Metaplex Token Metadata",
       projectDescription:
-        "A public Metaplex Token Metadata fixture pinned to an exact repository revision.",
+        "A public Metaplex Token Metadata fixture pinned to an exact repository revision and devnet program.",
       repositoryUrl: "https://github.com/metaplex-foundation/mpl-token-metadata",
       commit: "349e061053c6fc5b6b815e03e896e4db57012893",
       cluster: "devnet",
+      programId: "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
       createdAt: "2026-08-23T00:00:00.000Z",
       receiptId: "00000000-0000-4000-8000-000000000002",
     });

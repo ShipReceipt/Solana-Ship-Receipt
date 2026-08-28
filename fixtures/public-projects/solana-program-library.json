@@ -2,17 +2,18 @@
   "version": 1,
   "payload": {
     "projectTitle": "Solana Program Library",
-    "projectDescription": "A public Solana Program Library fixture pinned to an exact repository revision.",
+    "projectDescription": "A public Solana Program Library fixture pinned to an exact repository revision and devnet program.",
     "repository": {
       "url": "https://github.com/solana-labs/solana-program-library",
       "commit": "264ca72de06b0c2b45c0b15d298000fe3f82db2e"
     },
     "solana": {
       "cluster": "devnet",
-      "rpcUrl": "https://api.devnet.solana.com"
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
     },
     "createdAt": "2026-08-23T00:00:00.000Z",
     "receiptId": "00000000-0000-4000-8000-000000000003"
   },
-  "receiptHash": "126044d3430b739659bcb8d574674f9b081cb29a12ca2963d0a549b75a654183"
+  "receiptHash": "723a25918624997f002b4ba10c53443e6332c0e9b02791d206287530ca1af0fb"
 }

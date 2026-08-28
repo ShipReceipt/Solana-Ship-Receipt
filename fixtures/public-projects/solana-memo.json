@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Solana Memo Program",
+    "projectDescription": "A public Solana Memo program fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/solana-program/memo",
+      "commit": "9538bef8406874caea27226cdb751fab1b03cc58"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+    },
+    "createdAt": "2026-08-28T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000005"
+  },
+  "receiptHash": "b35b5840f27cf5ac4e873581c132c97ec731a4dceb3a4bff547f6a1bf1539ebe"
+}

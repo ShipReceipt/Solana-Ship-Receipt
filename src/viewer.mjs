@@ -7,6 +7,7 @@ import {
 } from "./receipt.mjs";
 
 const MAX_REQUEST_BODY_BYTES = 2 * 1024 * 1024;
+const DEFAULT_RATE_LIMIT = { maxRequests: 60, windowMs: 60_000 };
 
 function securityHeaders(contentType) {
   return {
@@ -86,6 +87,9 @@ export async function startViewer({
   host = "127.0.0.1",
   network = false,
   allowPublicHost = false,
+  rateLimit = DEFAULT_RATE_LIMIT,
+  maxConcurrentVerifications = 4,
+  requestLogger = console,
 } = {}) {
   if (host !== "127.0.0.1" && !allowPublicHost)
     throw new Error(
@@ -96,6 +100,21 @@ export async function startViewer({
   const schemaCheck = result.checks.find((check) => check.name === "schema");
   if (schemaCheck?.status === "failed")
     throw new Error(`Cannot serve invalid receipt: ${schemaCheck.message}`);
+  const requestCounts = new Map();
+  let activeVerifications = 0;
+  const verifySubmittedEnvelope = async (candidate) => {
+    if (activeVerifications >= maxConcurrentVerifications) {
+      const error = new Error("Verification capacity is temporarily full");
+      error.statusCode = 503;
+      throw error;
+    }
+    activeVerifications += 1;
+    try {
+      return await verifyEnvelope(candidate, { network });
+    } finally {
+      activeVerifications -= 1;
+    }
+  };
   const html = renderHtml(envelope, result);
   const uploadPage = `<!doctype html>
 <html lang="en">
@@ -590,6 +609,23 @@ export async function startViewer({
 </html>`;
 
   const server = createServer(async (request, response) => {
+    const startedAt = Date.now();
+    response.once("finish", () => {
+      if (!requestLogger?.info) return;
+      requestLogger.info(
+        JSON.stringify({
+          event: "viewer_request",
+          method: request.method || "GET",
+          path: new URL(request.url || "/", `http://${host}`).pathname,
+          status: response.statusCode,
+          durationMs: Date.now() - startedAt,
+          client: request.socket.remoteAddress || "unknown",
+          ...(request.verificationOutcome
+            ? { verificationOutcome: request.verificationOutcome }
+            : {}),
+        }),
+      );
+    });
     const method = request.method || "GET";
     if (!["GET", "HEAD", "POST"].includes(method)) {
       send(
@@ -602,6 +638,32 @@ export async function startViewer({
     }
 
     const path = new URL(request.url || "/", `http://${host}`).pathname;
+    if (method === "POST" && ["/", "/review", "/api/verify"].includes(path)) {
+      const now = Date.now();
+      const clientKey = request.socket.remoteAddress || "unknown";
+      const current = requestCounts.get(clientKey);
+      const window = current && now - current.startedAt < rateLimit.windowMs
+        ? current
+        : { startedAt: now, count: 0 };
+      window.count += 1;
+      requestCounts.set(clientKey, window);
+      if (window.count > rateLimit.maxRequests) {
+        const retryAfter = Math.max(
+          1,
+          Math.ceil((window.startedAt + rateLimit.windowMs - now) / 1000),
+        );
+        send(
+          response,
+          429,
+          {
+            ...securityHeaders("text/plain; charset=utf-8"),
+            "retry-after": String(retryAfter),
+          },
+          "Too Many Requests",
+        );
+        return;
+      }
+    }
     if (path === "/health") {
       if (method !== "GET" && method !== "HEAD") {
         send(
@@ -650,7 +712,8 @@ export async function startViewer({
           } else {
             envelopeCandidate = parsed;
           }
-          const uploadedResult = await verifyEnvelope(envelopeCandidate, { network });
+          const uploadedResult = await verifySubmittedEnvelope(envelopeCandidate);
+          request.verificationOutcome = uploadedResult.passed ? "passed" : "failed";
           const schemaCheck = uploadedResult.checks.find(
             (check) => check.name === "schema",
           );
@@ -701,7 +764,8 @@ export async function startViewer({
             parsed && typeof parsed === "object" && !Array.isArray(parsed)
               ? parsed
               : JSON.parse(rawBody || "{}");
-          const verificationResult = await verifyEnvelope(submitEnvelope, { network });
+          const verificationResult = await verifySubmittedEnvelope(submitEnvelope);
+          request.verificationOutcome = verificationResult.passed ? "passed" : "failed";
           const schemaCheck = verificationResult.checks.find(
             (check) => check.name === "schema",
           );
@@ -795,7 +859,8 @@ export async function startViewer({
         const submitEnvelope = parsed && typeof parsed === "object" && !Array.isArray(parsed)
           ? parsed
           : JSON.parse(rawBody || "{}");
-        const verificationResult = await verifyEnvelope(submitEnvelope, { network });
+        const verificationResult = await verifySubmittedEnvelope(submitEnvelope);
+        request.verificationOutcome = verificationResult.passed ? "passed" : "failed";
         const schemaCheck = verificationResult.checks.find(
           (check) => check.name === "schema",
         );

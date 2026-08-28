@@ -11,6 +11,17 @@ submitted receipts. Configure the platform health check to use `/health`.
 Treat it as a public demo until the operational controls listed below are
 complete.
 
+## GitHub Actions deployment
+
+The manual workflow `.github/workflows/deploy-public-verifier.yml` validates
+the test suite, triggers Render, and waits for `/health`. Configure a protected
+production-environment secret named `RENDER_DEPLOY_HOOK_URL` with the Render
+deploy hook URL. Keep the hook URL out of repository files and workflow output.
+
+To roll back, pause the workflow, select the last known-good commit in the
+Render service dashboard, and redeploy it. Confirm `/health`, `/review`, and
+`/api/verification` before resuming deployments.
+
 ## Release gate
 
 Before exposing the verifier to the public internet, confirm all of the following:
@@ -19,7 +30,7 @@ Before exposing the verifier to the public internet, confirm all of the followin
 - The service is bound only to the intended public host and requires explicit `--public` opt-in.
 - Outbound HTTP(S) checks are subject to the same SSRF protections in the repo: no credentials, no loopback/private/reserved destinations, and redirect validation.
 - Response bodies are bounded and untrusted values are escaped in rendered HTML.
-- The deployment has rate limiting, concurrency limits, and structured audit logs without secrets.
+- The deployment has rate limiting, concurrency limits, and structured audit logs without secrets. The viewer provides configurable per-client POST and concurrent-verification limits and emits structured request logs without receipt contents.
 - The public host is behind a reverse proxy or load balancer with TLS termination and a documented rollback plan.
 - The service is tested with the same suite in this repository and passes the release gate in `docs/THREAT-MODEL.md`.
 

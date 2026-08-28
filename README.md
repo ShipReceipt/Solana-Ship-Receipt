@@ -155,6 +155,10 @@ Open `/review` to verify a receipt without installing the CLI. The hosted
 instance is a read-only demonstration verifier; it does not sign receipts,
 store submissions, or prove project security.
 
+Deployments are triggered manually through the GitHub Actions workflow after
+the test suite passes. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the
+required protected Render deploy-hook secret and rollback procedure.
+
 Render a standalone HTML document:
 
 ```powershell
@@ -236,7 +240,9 @@ existing artifacts and reporting unchecked evidence accurately.
 ## Fixtures and testing
 
 `fixtures/public-projects/` contains deterministic receipts pinned to public
-revisions of Anchor, Metaplex Token Metadata, and Solana Program Library.
+revisions of Anchor, Metaplex Token Metadata, Solana Program Library, and
+Solana Memo. The Metaplex, Solana Program Library, and Solana Memo fixtures
+also include known devnet executable program accounts.
 Offline tests validate their receipt integrity; public network checks remain
 separate because third-party APIs and RPC services may be temporarily
 unavailable.
@@ -297,9 +303,10 @@ service.
 This repository contains the MVP: receipt schema, CLI, verifier, wallet
 attestation, public evidence checks, HTML renderer, loopback viewer, hosted
 reviewer, reviewer bundle, offline auditor, fixtures, GitHub Actions workflow,
-and agent skill. The hosted Render instance is available for review; rate
-limiting, structured operational logs, and a production rollback process
-remain release-hardening work.
+and agent skill. The hosted Render instance is available for review; a
+production rollback process remains release-hardening work. The verifier
+enforces request-size, rate, and concurrency limits and emits structured
+request logs without receipt contents.
 
 Delivery goals and acceptance criteria are tracked in
 [`docs/MILESTONES.md`](docs/MILESTONES.md).

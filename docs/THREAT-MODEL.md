@@ -68,8 +68,10 @@ audit; high-value use should compare independent endpoints.
 ### Denial of service
 
 Network checks use timeouts, bounded redirects, small request methods, and no
-parallel fan-out. Hosted deployments should add rate limits, concurrency caps,
-response byte limits, and caching keyed by receipt hash.
+parallel fan-out. The viewer applies configurable per-client POST,
+concurrent-verification, and response byte limits, and emits structured
+request logs without receipt contents. Hosted deployments should
+add carefully evaluated caching keyed by receipt hash.
 
 ## Non-goals
 

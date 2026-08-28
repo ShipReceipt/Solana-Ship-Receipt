@@ -26,5 +26,29 @@ jobs:
       - name: Create sample receipt
         run: node src/cli.mjs sample --out sample.receipt.json
 
-      - name: Publish placeholder verifier
-        run: echo "Public verifier deployment is intentionally gated by the repo security model; use the explicit --public opt-in only after the release gate passes."
+      - name: Validate deployment secret
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL is required in the production environment."
+            exit 1
+          fi
+
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl --fail-with-body --silent --show-error --request POST "$RENDER_DEPLOY_HOOK_URL" >/dev/null
+
+      - name: Wait for verifier health
+        env:
+          RENDER_SERVICE_URL: https://solana-ship-receipt.onrender.com
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --show-error "$RENDER_SERVICE_URL/health"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Render deployment did not become healthy within five minutes."
+          exit 1

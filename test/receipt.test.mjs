@@ -1497,6 +1497,114 @@ test("viewer rejects oversized verification requests before parsing", async () =
   }
 });
 
+test("viewer rate-limits verification submissions per client", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Rate limits",
+    projectDescription: "A project used to exercise verification rate limits.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({
+    envelope,
+    port: 0,
+    network: false,
+    rateLimit: { maxRequests: 1, windowMs: 60_000 },
+  });
+  try {
+    const request = () =>
+      fetch(`${viewer.url}api/verify`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(envelope),
+      });
+    assert.equal((await request()).status, 200);
+    const limited = await request();
+    assert.equal(limited.status, 429);
+    assert.equal(limited.headers.get("retry-after"), "60");
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("viewer rejects submissions when verification capacity is full", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Concurrency limits",
+    projectDescription: "A project used to exercise verification capacity limits.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const viewer = await startViewer({
+    envelope: createEnvelope(payload),
+    port: 0,
+    network: false,
+    maxConcurrentVerifications: 0,
+  });
+  try {
+    const response = await fetch(`${viewer.url}api/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(createEnvelope(payload)),
+    });
+    assert.equal(response.status, 503);
+    assert.match(await response.text(), /capacity is temporarily full/i);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("viewer emits structured request logs without receipt contents", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const logs = [];
+  const payload = createPayload({
+    projectTitle: "Structured logs",
+    projectDescription: "A project used to exercise operational request logs.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const envelope = createEnvelope(payload);
+  const viewer = await startViewer({
+    envelope,
+    port: 0,
+    network: false,
+    requestLogger: { info: (message) => logs.push(message) },
+  });
+  try {
+    const response = await fetch(`${viewer.url}api/verify`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+    assert.equal(response.status, 200);
+    await new Promise((resolve) => response.body?.cancel().then(resolve) ?? resolve());
+    assert.equal(logs.length, 1);
+    const event = JSON.parse(logs[0]);
+    assert.deepEqual(
+      {
+        event: event.event,
+        method: event.method,
+        path: event.path,
+        status: event.status,
+        verificationOutcome: event.verificationOutcome,
+      },
+      {
+        event: "viewer_request",
+        method: "POST",
+        path: "/api/verify",
+        status: 200,
+        verificationOutcome: "passed",
+      },
+    );
+    assert.equal(typeof event.durationMs, "number");
+    assert.equal(typeof event.client, "string");
+    assert.doesNotMatch(logs[0], /Structured logs|receiptHash|abcdef1234567890/);
+  } finally {
+    await viewer.close();
+  }
+});
+
 test("public reviewer page exposes a hosted verification form", async () => {
   const { startViewer } = await import("../src/viewer.mjs");
   const payload = createPayload({
@@ -2229,13 +2337,14 @@ test("guided receipt skill documents the safe evidence workflow", async () => {
   assert.match(ui, /default_prompt:/);
 });
 
-test("ships three reproducible receipts from public Solana repositories", async () => {
+test("ships five reproducible receipts from public Solana repositories", async () => {
   const fixtureDir = join(process.cwd(), "fixtures", "public-projects");
   const names = (await readdir(fixtureDir))
     .filter((name) => name.endsWith(".json"))
     .sort();
-  assert.equal(names.length, 3);
+  assert.equal(names.length, 5);
   const repositories = new Set();
+  let programEvidence = 0;
   for (const name of names) {
     const envelope = JSON.parse(await readFile(join(fixtureDir, name), "utf8"));
     const result = await verifyEnvelope(envelope);
@@ -2245,7 +2354,9 @@ test("ships three reproducible receipts from public Solana repositories", async 
       /^https:\/\/github\.com\/[^/]+\/[^/]+$/,
     );
     assert.match(envelope.payload.repository.commit, /^[0-9a-f]{40}$/);
+    if (envelope.payload.solana.programId) programEvidence += 1;
     repositories.add(envelope.payload.repository.url);
   }
-  assert.equal(repositories.size, 3);
+  assert.equal(repositories.size, 5);
+  assert.equal(programEvidence, 3);
 });
