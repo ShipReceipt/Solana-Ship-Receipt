@@ -154,6 +154,8 @@ The hosted reviewer is available at
 Open `/review` to verify a receipt without installing the CLI. The hosted
 instance is a read-only demonstration verifier; it does not sign receipts,
 store submissions, or prove project security.
+Use `/builder` to create a receipt from project metadata and optional public
+evidence. Wallet signing and Memo submission remain local builder operations.
 
 Deployments are triggered manually through the GitHub Actions workflow after
 the test suite passes. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the

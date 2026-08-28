@@ -108,6 +108,30 @@ Wallet signing is separate and optional. Follow the
 when you want to prove control of a local Solana keypair. Never paste a private
 key or seed phrase into a receipt, issue, command argument, or CI secret.
 
+### Optional Memo anchor
+
+To anchor the receipt hash on devnet, first read the `receiptHash` from the
+receipt JSON, then submit that exact value as a Memo transaction with the
+Solana CLI. The CLI reads the keypair locally and sends the transaction directly
+to the selected cluster; Ship Receipt never receives the keypair.
+
+```powershell
+$receiptHash = (Get-Content my-project.receipt.json | ConvertFrom-Json).receiptHash
+solana config set --url devnet
+solana transfer --from "$env:USERPROFILE\.config\solana\id.json" --allow-unfunded-recipient --fee-payer "$env:USERPROFILE\.config\solana\id.json" 0.000005 "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr" --with-memo $receiptHash
+```
+
+Use the returned transaction signature when creating a new receipt revision:
+
+```powershell
+node src/cli.mjs create --title "My Solana Project" --description "A concise description of the shipped build." --repo "https://github.com/OWNER/REPOSITORY" --commit "FULL_40_CHARACTER_COMMIT_SHA" --cluster devnet --memo "$receiptHash" --tx "MEMO_TRANSACTION_SIGNATURE" --out my-project.memo.receipt.json
+node src/cli.mjs verify my-project.memo.receipt.json --network
+```
+
+The Memo check is verified only when the transaction contains the exact
+canonical payload hash. The hosted verifier remains read-only and never submits
+transactions.
+
 ## 6. Build the reviewer handoff
 
 Create a new reviewer bundle and validate it offline:

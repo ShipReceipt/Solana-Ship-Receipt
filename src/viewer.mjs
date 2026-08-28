@@ -378,6 +378,59 @@ export async function startViewer({
 </body>
 </html>`;
 
+  const builderPage = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Create receipt · Solana Ship Receipt</title>
+  <style>
+    :root { --bg: #0a0a0f; --panel: #111118; --panel-alt: #15151e; --line: rgba(255,255,255,.08); --text: #f4f3f8; --muted: #92909f; --purple: #9945ff; --green: #14f195; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: var(--bg); color: var(--text); font: 16px/1.55 "Trebuchet MS", Verdana, sans-serif; }
+    .page { width: min(760px, calc(100% - 2rem)); margin: 2rem auto; }
+    .shell { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+    header { padding: 2rem; border-bottom: 1px solid var(--line); }
+    .eyebrow, label { color: var(--muted); font: .7rem/1.4 "SFMono-Regular", Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .eyebrow { margin: 0 0 1.2rem; color: var(--green); }
+    h1 { margin: 0; font: 700 2.8rem/1.05 Georgia, "Times New Roman", serif; background: linear-gradient(90deg,var(--purple),var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .lede { max-width: 58ch; margin: .8rem 0 0; color: var(--muted); }
+    form { display: grid; gap: 1rem; padding: 2rem; }
+    .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+    .field { display: grid; gap: .45rem; }
+    .wide { grid-column: 1 / -1; }
+    input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: .8rem; background: var(--panel-alt); color: var(--text); font: .88rem/1.5 "SFMono-Regular", Consolas, monospace; }
+    textarea { min-height: 100px; resize: vertical; }
+    input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+    button { justify-self: start; border: 0; border-radius: 4px; padding: .85rem 1.1rem; background: var(--purple); color: white; font-weight: 800; cursor: pointer; }
+    .note { margin: 0; color: var(--muted); font-size: .85rem; }
+    @media (max-width: 620px) { .page { width: min(100% - 1rem, 760px); margin: 1rem auto; } header, form { padding: 1.5rem; } h1 { font-size: 2.25rem; } .fields { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+  </style>
+</head>
+<body>
+  <div class="page"><div class="shell">
+    <header><p class="eyebrow">Solana Ship Receipt · builder flow</p><h1>Create a receipt</h1><p class="lede">Bind a public Git revision to optional Solana, demo, and build evidence. The result is rendered for review immediately.</p></header>
+    <form method="post" action="/" accept-charset="utf-8">
+      <div class="fields">
+        <div class="field wide"><label for="project-title">Project title</label><input id="project-title" name="projectTitle" required minlength="3" maxlength="120"></div>
+        <div class="field wide"><label for="project-description">Description</label><textarea id="project-description" name="projectDescription" required minlength="10" maxlength="1000"></textarea></div>
+        <div class="field"><label for="repository-url">Repository URL</label><input id="repository-url" name="repositoryUrl" type="url" placeholder="https://github.com/owner/project" required></div>
+        <div class="field"><label for="commit">Exact commit SHA</label><input id="commit" name="commit" pattern="[0-9a-fA-F]{40}" required></div>
+        <div class="field"><label for="cluster">Solana cluster</label><select id="cluster" name="cluster"><option value="devnet">devnet</option><option value="testnet">testnet</option><option value="mainnet">mainnet</option></select></div>
+        <div class="field"><label for="program-id">Program ID</label><input id="program-id" name="programId" placeholder="Optional executable account"></div>
+        <div class="field"><label for="transaction-signature">Transaction signature</label><input id="transaction-signature" name="transactionSignature" placeholder="Optional confirmed transaction"></div>
+        <div class="field"><label for="demo-url">Demo URL</label><input id="demo-url" name="demoUrl" type="url" placeholder="Optional public demo"></div>
+        <div class="field"><label for="verified-build-url">Verified-build URL</label><input id="verified-build-url" name="verifiedBuildUrl" type="url" placeholder="Optional build evidence"></div>
+      </div>
+      <p class="note">Wallet signing and Memo anchoring happen locally after creation. This hosted flow never requests private keys or submits transactions.</p>
+      <button type="submit">Create receipt</button>
+    </form>
+  </div></div>
+</body>
+</html>`;
+
   const reviewPage = `<!doctype html>
 <html lang="en">
 <head>
@@ -756,6 +809,24 @@ export async function startViewer({
         200,
         securityHeaders("text/html; charset=utf-8"),
         method === "HEAD" ? "" : uploadPage,
+      );
+      return;
+    }
+    if (path === "/builder") {
+      if (method !== "GET" && method !== "HEAD") {
+        send(
+          response,
+          405,
+          { ...securityHeaders("text/plain; charset=utf-8"), allow: "GET, HEAD" },
+          "Method Not Allowed",
+        );
+        return;
+      }
+      send(
+        response,
+        200,
+        securityHeaders("text/html; charset=utf-8"),
+        method === "HEAD" ? "" : builderPage,
       );
       return;
     }

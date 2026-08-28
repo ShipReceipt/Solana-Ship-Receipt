@@ -1311,6 +1311,8 @@ test("getting started guide covers first use and reviewer handoff", async () => 
     "verify my-project.receipt.json --network",
     "bundle my-project.receipt.json",
     "audit reviewer-bundle --json",
+    "Optional Memo anchor",
+    "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
     "not_checked",
     "Common problems",
   ])
@@ -1414,6 +1416,34 @@ test("builder form creates a receipt from project metadata and renders it", asyn
     const body = await response.text();
     assert.match(body, /Builder form/);
     assert.match(body, /Verification/);
+  } finally {
+    await viewer.close();
+  }
+});
+
+test("builder onboarding page exposes receipt creation fields", async () => {
+  const { startViewer } = await import("../src/viewer.mjs");
+  const payload = createPayload({
+    projectTitle: "Builder page",
+    projectDescription: "A project used to exercise the builder onboarding page.",
+    repositoryUrl: "https://github.com/example/project",
+    commit: "abcdef1234567890abcdef1234567890abcdef12",
+  });
+  const viewer = await startViewer({
+    envelope: createEnvelope(payload),
+    port: 0,
+    network: false,
+  });
+  try {
+    const response = await fetch(`${viewer.url}builder`);
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.match(html, /Create a receipt/i);
+    assert.match(html, /name="repositoryUrl"/i);
+    assert.match(html, /name="commit"/i);
+    assert.match(html, /name="programId"/i);
+    assert.match(html, /name="transactionSignature"/i);
+    assert.match(html, /never requests private keys/i);
   } finally {
     await viewer.close();
   }
