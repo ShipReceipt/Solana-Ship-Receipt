@@ -125,226 +125,53 @@ export async function startViewer({
   <meta name="color-scheme" content="dark">
   <title>Local viewer · Solana Ship Receipt</title>
   <style>
-    :root {
-      --bg: #0a0a0f;
-      --panel: #111118;
-      --panel-alt: #15151e;
-      --line: rgba(255, 255, 255, 0.08);
-      --text: #f4f3f8;
-      --muted: #92909f;
-      --brand: #14f195;
-      --brand-2: #9945ff;
-      --brand-soft: rgba(20, 241, 149, 0.1);
-      --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(20,241,149,.25)}50%{box-shadow:0 0 16px rgba(20,241,149,.45)}}
+    :root{
+      --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
+      --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
+      --purple:#9945ff;--green:#14f195;
+      --green-soft:rgba(20,241,149,.1);--purple-soft:rgba(153,69,255,.12);
+      --shadow:0 24px 60px rgba(0,0,0,.35);
+      --glow-green:0 0 20px rgba(20,241,149,.15);
     }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    body {
-      font-family: "Trebuchet MS", Verdana, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-    }
-    .page {
-      width: min(760px, calc(100% - 2rem));
-      margin: 2rem auto;
-    }
-    .shell {
-      position: relative;
-      overflow: hidden;
-      padding: 1.25rem;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.25rem 0.4rem 1.2rem;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 1.4rem;
-    }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: var(--brand);
-      font-family: "SFMono-Regular", Consolas, monospace;
-    }
-    .brand-mark {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-      background: linear-gradient(135deg, var(--brand-2), var(--brand));
-    }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      border: 1px solid rgba(20, 241, 149, 0.45);
-      border-radius: 999px;
-      background: var(--brand-soft);
-      padding: 0.48rem 0.8rem;
-      color: var(--brand);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .status-dot {
-      width: 0.55rem;
-      height: 0.55rem;
-      border-radius: 50%;
-      background: var(--brand);
-      box-shadow: 0 0 10px rgba(20, 241, 149, 0.45);
-    }
-    .content {
-      display: grid;
-      grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
-      gap: 1.5rem;
-      align-items: start;
-      position: relative;
-      z-index: 1;
-    }
-    .card {
-      background: var(--panel-alt);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 1.6rem;
-    }
-    h1 {
-      margin: 0 0 0.7rem;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 2.8rem;
-      line-height: 1.04;
-      letter-spacing: 0;
-      background: linear-gradient(90deg, var(--brand-2), var(--brand));
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-    }
-    .lede {
-      margin: 0 0 1.2rem;
-      max-width: 62ch;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    label {
-      display: block;
-      margin-bottom: 0.55rem;
-      color: var(--muted);
-      font-size: 0.73rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    textarea {
-      width: 100%;
-      min-height: 240px;
-      margin-bottom: 1rem;
-      background: rgba(4, 12, 10, 0.72);
-      border: 1px solid rgba(154, 230, 255, 0.18);
-      border-radius: 4px;
-      padding: 1rem 1rem 0.95rem;
-      resize: vertical;
-      color: var(--text);
-      font: 0.9rem/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      box-shadow: none;
-    }
-    textarea::placeholder {
-      color: rgba(185, 217, 207, 0.7);
-    }
-    input[type="file"] {
-      width: 100%;
-      margin-top: 0.2rem;
-      color: var(--muted);
-    }
-    .button-row {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      margin-top: 0.7rem;
-    }
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 1rem;
-      margin: 1.4rem 0 1.6rem;
-    }
-    .feature {
-      background: rgba(10, 17, 14, 0.9);
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      padding: 1rem;
-    }
-    .feature small {
-      display: block;
-      margin-bottom: 0.5rem;
-      color: var(--brand);
-      font-weight: 800;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-    }
-    .feature strong {
-      display: block;
-      margin-bottom: 0.35rem;
-      font-size: 1rem;
-    }
-    .feature span {
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 0.92rem;
-    }
-    button {
-      appearance: none;
-      border: 0;
-      border-radius: 4px;
-      padding: 0.8rem 1.1rem;
-      background: var(--brand-2);
-      color: #04120d;
-      font-weight: 900;
-      cursor: pointer;
-      box-shadow: none;
-    }
-    .meta {
-      display: grid;
-      gap: 0.9rem;
-    }
-    .stat {
-      border: 1px solid var(--line);
-      border-radius: 4px;
-      background: var(--panel-alt);
-      padding: 1rem 1.1rem;
-    }
-    .stat strong {
-      display: block;
-      margin-bottom: 0.3rem;
-      color: var(--brand);
-      font-size: 0.72rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    .stat span {
-      color: var(--muted);
-      line-height: 1.5;
-    }
-    .note {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    @media (max-width: 760px) {
-      .page { width: min(100% - 1rem, 760px); margin: 1.25rem auto; }
-      .header { flex-direction: column; align-items: flex-start; }
-      .content { grid-template-columns: 1fr; }
-      h1 { font-size: 2.25rem; }
-    }
+    *{box-sizing:border-box;margin:0}
+    html,body{min-height:100%}
+    body{font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--text);background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgba(153,69,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(20,241,149,.04) 0%,transparent 50%)}
+    .page{width:min(760px,calc(100% - 2rem));margin:2.5rem auto;animation:fadeUp .5s ease-out both}
+    .shell{position:relative;overflow:hidden;padding:1.25rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:var(--shadow),var(--glow-green)}
+    .shell::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
+    .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.25rem .4rem 1.2rem;border-bottom:1px solid var(--line);margin-bottom:1.4rem}
+    .brand{display:inline-flex;align-items:center;gap:.75rem;letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;font-weight:800;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace}
+    .brand-mark{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--purple),var(--green));animation:glow 3s ease-in-out infinite}
+    .status-pill{display:inline-flex;align-items:center;gap:.55rem;border:1px solid rgba(20,241,149,.35);border-radius:999px;background:var(--green-soft);padding:.48rem .8rem;color:var(--green);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .status-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(20,241,149,.5)}
+    .content{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);gap:1.5rem;align-items:start;position:relative;z-index:1}
+    .card{background:rgba(21,21,30,.85);border:1px solid var(--line);border-radius:8px;padding:1.6rem;backdrop-filter:blur(8px)}
+    h1{margin:0 0 .7rem;font-family:Georgia,"Times New Roman",serif;font-size:2.8rem;line-height:1.04;letter-spacing:0;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lede{margin:0 0 1.2rem;max-width:62ch;color:var(--muted);line-height:1.6}
+    label{display:block;margin-bottom:.55rem;color:var(--muted);font-size:.73rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-family:"SFMono-Regular",Consolas,monospace}
+    textarea{width:100%;min-height:240px;margin-bottom:1rem;background:rgba(4,12,10,.72);border:1px solid rgba(154,230,255,.18);border-radius:6px;padding:1rem 1rem .95rem;resize:vertical;color:var(--text);font:.9rem/1.6 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;transition:border-color .2s,box-shadow .2s}
+    textarea::placeholder{color:rgba(185,217,207,.7)}
+    textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
+    input[type="file"]{width:100%;margin-top:.2rem;color:var(--muted)}
+    .button-row{display:flex;align-items:center;gap:.85rem;margin-top:.7rem}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.4rem 0 1.6rem}
+    .feature{background:rgba(10,17,14,.9);border:1px solid var(--line);border-radius:6px;padding:1rem;transition:border-color .2s,transform .2s}
+    .feature:hover{border-color:rgba(20,241,149,.2);transform:translateY(-2px)}
+    .feature small{display:block;margin-bottom:.5rem;color:var(--green);font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+    .feature strong{display:block;margin-bottom:.35rem;font-size:1rem}
+    .feature span{color:var(--muted);line-height:1.5;font-size:.92rem}
+    button{appearance:none;border:0;border-radius:6px;padding:.8rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
+    button:active{transform:translateY(0)}
+    .meta{display:grid;gap:.9rem}
+    .stat{border:1px solid var(--line);border-radius:6px;background:rgba(21,21,30,.6);padding:1rem 1.1rem;transition:border-color .2s}
+    .stat:hover{border-color:rgba(20,241,149,.15)}
+    .stat strong{display:block;margin-bottom:.3rem;color:var(--green);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+    .stat span{color:var(--muted);line-height:1.5}
+    .note{margin:0;color:var(--muted);line-height:1.6;font-size:.88rem}
+    @media(max-width:760px){.page{width:min(100% - 1rem,760px);margin:1.25rem auto}.header{flex-direction:column;align-items:flex-start}.content{grid-template-columns:1fr}h1{font-size:2.25rem}}
   </style>
 </head>
 <body>
@@ -360,7 +187,7 @@ export async function startViewer({
           <p class="lede">Paste a canonical receipt JSON to review it in the same local viewer flow and inspect the verification result without leaving the page.</p>
           <form method="post" action="/" accept-charset="utf-8" enctype="multipart/form-data">
             <label for="receipt">Receipt JSON</label>
-            <textarea id="receipt" name="receipt" placeholder="{\n  \"version\": 1,\n  \"payload\": { ... },\n  \"receiptHash\": \"...\"\n}"></textarea>
+            <textarea id="receipt" name="receipt" placeholder="{\n  &quot;version&quot;: 1,\n  &quot;payload&quot;: { ... },\n  &quot;receiptHash&quot;: &quot;...&quot;\n}"></textarea>
             <label for="receipt-file">Upload JSON</label>
             <input id="receipt-file" type="file" name="receipt-file" accept="application/json">
             <div class="button-row">
@@ -387,27 +214,36 @@ export async function startViewer({
   <meta name="color-scheme" content="dark">
   <title>Create receipt · Solana Ship Receipt</title>
   <style>
-    :root { --bg: #0a0a0f; --panel: #111118; --panel-alt: #15151e; --line: rgba(255,255,255,.08); --text: #f4f3f8; --muted: #92909f; --purple: #9945ff; --green: #14f195; }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    body { background: var(--bg); color: var(--text); font: 16px/1.55 "Trebuchet MS", Verdana, sans-serif; }
-    .page { width: min(760px, calc(100% - 2rem)); margin: 2rem auto; }
-    .shell { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
-    header { padding: 2rem; border-bottom: 1px solid var(--line); }
-    .eyebrow, label { color: var(--muted); font: .7rem/1.4 "SFMono-Regular", Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
-    .eyebrow { margin: 0 0 1.2rem; color: var(--green); }
-    h1 { margin: 0; font: 700 2.8rem/1.05 Georgia, "Times New Roman", serif; background: linear-gradient(90deg,var(--purple),var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lede { max-width: 58ch; margin: .8rem 0 0; color: var(--muted); }
-    form { display: grid; gap: 1rem; padding: 2rem; }
-    .fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
-    .field { display: grid; gap: .45rem; }
-    .wide { grid-column: 1 / -1; }
-    input, textarea, select { width: 100%; border: 1px solid var(--line); border-radius: 4px; padding: .8rem; background: var(--panel-alt); color: var(--text); font: .88rem/1.5 "SFMono-Regular", Consolas, monospace; }
-    textarea { min-height: 100px; resize: vertical; }
-    input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
-    button { justify-self: start; border: 0; border-radius: 4px; padding: .85rem 1.1rem; background: var(--purple); color: white; font-weight: 800; cursor: pointer; }
-    .note { margin: 0; color: var(--muted); font-size: .85rem; }
-    @media (max-width: 620px) { .page { width: min(100% - 1rem, 760px); margin: 1rem auto; } header, form { padding: 1.5rem; } h1 { font-size: 2.25rem; } .fields { grid-template-columns: 1fr; } .wide { grid-column: auto; } }
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    :root{
+      --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
+      --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
+      --purple:#9945ff;--green:#14f195;
+      --shadow:0 24px 60px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box;margin:0}
+    html,body{min-height:100%}
+    body{background:var(--bg);color:var(--text);font:16px/1.55 "Trebuchet MS",Verdana,sans-serif;background-image:radial-gradient(ellipse at 20% 0%,rgba(153,69,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(20,241,149,.04) 0%,transparent 50%)}
+    .page{width:min(760px,calc(100% - 2rem));margin:2.5rem auto;animation:fadeUp .5s ease-out both}
+    .shell{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:var(--shadow)}
+    .shell::before{content:"";display:block;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
+    header{padding:2rem 2rem 1.8rem;border-bottom:1px solid var(--line)}
+    .eyebrow,label{color:var(--muted);font:.7rem/1.4 "SFMono-Regular",Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
+    .eyebrow{margin:0 0 1.2rem;color:var(--green)}
+    h1{margin:0;font:700 2.8rem/1.05 Georgia,"Times New Roman",serif;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lede{max-width:58ch;margin:.8rem 0 0;color:var(--muted)}
+    form{display:grid;gap:1rem;padding:2rem}
+    .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+    .field{display:grid;gap:.45rem}
+    .wide{grid-column:1/-1}
+    input,textarea,select{width:100%;border:1px solid var(--line);border-radius:6px;padding:.8rem;background:var(--panel-alt);color:var(--text);font:.88rem/1.5 "SFMono-Regular",Consolas,monospace;transition:border-color .2s,box-shadow .2s}
+    textarea{min-height:100px;resize:vertical}
+    input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
+    button{justify-self:start;border:0;border-radius:6px;padding:.85rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
+    button:active{transform:translateY(0)}
+    .note{margin:0;color:var(--muted);font-size:.85rem}
+    @media(max-width:620px){.page{width:min(100% - 1rem,760px);margin:1rem auto}header,form{padding:1.5rem}h1{font-size:2.25rem}.fields{grid-template-columns:1fr}.wide{grid-column:auto}}
   </style>
 </head>
 <body>
@@ -440,185 +276,52 @@ export async function startViewer({
   <meta name="color-scheme" content="dark">
   <title>Verify receipt · Solana Ship Receipt</title>
   <style>
-    :root {
-      --bg: #0b0d0c;
-      --panel: #111513;
-      --line: #34413a;
-      --text: #f2f4ed;
-      --muted: #aeb8b0;
-      --brand: #b6f23b;
-      --brand-2: #d9ff91;
-      --brand-soft: rgba(182, 242, 59, 0.1);
-      --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
-      --danger: #ffb0ac;
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    :root{
+      --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
+      --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
+      --purple:#9945ff;--green:#14f195;
+      --green-soft:rgba(20,241,149,.1);--purple-soft:rgba(153,69,255,.12);
+      --shadow:0 24px 60px rgba(0,0,0,.35);
+      --danger:#ff6b61;
     }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; }
-    body {
-      font-family: "Trebuchet MS", Verdana, sans-serif;
-      color: var(--text);
-      background: var(--bg);
-    }
-    .page {
-      width: min(1080px, calc(100% - 2rem));
-      margin: 4rem auto;
-    }
-    .shell {
-      position: relative;
-      overflow: hidden;
-      padding: 1.25rem;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: var(--panel);
-      box-shadow: var(--shadow);
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      padding: 0.25rem 0.4rem 1.2rem;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 1.4rem;
-    }
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.75rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      font-size: 0.72rem;
-      font-weight: 800;
-      color: var(--brand);
-    }
-    .brand-mark {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-      background: var(--brand);
-    }
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.55rem;
-      border: 1px solid rgba(154, 230, 255, 0.45);
-      border-radius: 3px;
-      background: rgba(154, 230, 255, 0.08);
-      padding: 0.48rem 0.8rem;
-      color: var(--brand-2);
-      font-size: 0.72rem;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .status-dot {
-      width: 0.55rem;
-      height: 0.55rem;
-      border-radius: 50%;
-      background: var(--brand-2);
-      box-shadow: none;
-    }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 1.6rem;
-    }
-    h1 {
-      margin: 0 0 0.7rem;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 3rem;
-      line-height: 1.04;
-      letter-spacing: 0;
-    }
-    .lede {
-      margin: 0 0 1.2rem;
-      max-width: 62ch;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    label {
-      display: block;
-      margin-bottom: 0.55rem;
-      color: var(--muted);
-      font-size: 0.73rem;
-      font-weight: 800;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    textarea {
-      width: 100%;
-      min-height: 240px;
-      margin-bottom: 1rem;
-      background: rgba(4, 12, 10, 0.72);
-      border: 1px solid rgba(154, 230, 255, 0.18);
-      border-radius: 4px;
-      padding: 1rem 1rem 0.95rem;
-      resize: vertical;
-      color: var(--text);
-      font: 0.9rem/1.6 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      box-shadow: none;
-    }
-    textarea::placeholder {
-      color: rgba(185, 217, 207, 0.7);
-    }
-    .button-row {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      margin-top: 0.7rem;
-    }
-    .status-guide {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.65rem;
-      margin: 1.2rem 0 1.5rem;
-    }
-    .status-guide div {
-      border-top: 2px solid var(--brand);
-      padding: 0.7rem 0.75rem 0;
-      background: rgba(10, 17, 14, 0.55);
-    }
-    .status-guide strong {
-      display: block;
-      margin-bottom: 0.25rem;
-      font-size: 0.85rem;
-    }
-    .status-guide span {
-      color: var(--muted);
-      font-size: 0.78rem;
-      line-height: 1.4;
-    }
-    button {
-      appearance: none;
-      border: 0;
-      border-radius: 4px;
-      padding: 0.8rem 1.1rem;
-      background: var(--brand);
-      color: #04120d;
-      font-weight: 900;
-      cursor: pointer;
-      box-shadow: none;
-    }
-    .error {
-      color: var(--danger);
-      font-weight: 700;
-    }
-    .note {
-      margin: 0;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-    @media (max-width: 760px) {
-      .page { width: min(100% - 1rem, 1080px); margin: 1.25rem auto; }
-      .header { flex-direction: column; align-items: flex-start; }
-      .feature-grid { grid-template-columns: 1fr; }
-      .status-guide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      h1 { font-size: 2.25rem; }
-    }
-    @media (max-width: 420px) {
-      .status-guide { grid-template-columns: 1fr; }
-    }
+    *{box-sizing:border-box;margin:0}
+    html,body{min-height:100%}
+    body{font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--text);background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgba(153,69,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(20,241,149,.04) 0%,transparent 50%)}
+    .page{width:min(1080px,calc(100% - 2rem));margin:3rem auto;animation:fadeUp .5s ease-out both}
+    .shell{position:relative;overflow:hidden;padding:1.25rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:var(--shadow)}
+    .shell::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
+    .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.25rem .4rem 1.2rem;border-bottom:1px solid var(--line);margin-bottom:1.4rem}
+    .brand{display:inline-flex;align-items:center;gap:.75rem;letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;font-weight:800;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace}
+    .brand-mark{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--purple),var(--green))}
+    .status-pill{display:inline-flex;align-items:center;gap:.55rem;border:1px solid rgba(20,241,149,.35);border-radius:999px;background:var(--green-soft);padding:.48rem .8rem;color:var(--green);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .status-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(20,241,149,.5)}
+    .card{background:rgba(21,21,30,.85);border:1px solid var(--line);border-radius:8px;padding:1.6rem;backdrop-filter:blur(8px)}
+    h1{margin:0 0 .7rem;font-family:Georgia,"Times New Roman",serif;font-size:3rem;line-height:1.04;letter-spacing:0;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
+    .lede{margin:0 0 1.2rem;max-width:62ch;color:var(--muted);line-height:1.6}
+    label{display:block;margin-bottom:.55rem;color:var(--muted);font-size:.73rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-family:"SFMono-Regular",Consolas,monospace}
+    textarea{width:100%;min-height:240px;margin-bottom:1rem;background:rgba(4,12,10,.72);border:1px solid rgba(154,230,255,.18);border-radius:6px;padding:1rem 1rem .95rem;resize:vertical;color:var(--text);font:.9rem/1.6 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;transition:border-color .2s,box-shadow .2s}
+    textarea::placeholder{color:rgba(185,217,207,.7)}
+    textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
+    .button-row{display:flex;align-items:center;gap:.85rem;margin-top:.7rem}
+    .status-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;margin:1.2rem 0 1.5rem}
+    .status-guide div{border-top:2px solid var(--green);padding:.7rem .75rem 0;background:rgba(10,17,14,.55);border-radius:0 0 6px 6px;transition:border-color .2s,transform .2s}
+    .status-guide div:hover{transform:translateY(-2px)}
+    .status-guide strong{display:block;margin-bottom:.25rem;font-size:.85rem}
+    .status-guide span{color:var(--muted);font-size:.78rem;line-height:1.4}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.2rem 0 1.5rem}
+    .feature{background:rgba(10,17,14,.9);border:1px solid var(--line);border-radius:6px;padding:1rem;transition:border-color .2s,transform .2s}
+    .feature:hover{border-color:rgba(20,241,149,.2);transform:translateY(-2px)}
+    .feature small{display:block;margin-bottom:.5rem;color:var(--green);font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+    .feature strong{display:block;margin-bottom:.35rem;font-size:1rem}
+    .feature span{color:var(--muted);line-height:1.5;font-size:.92rem}
+    button{appearance:none;border:0;border-radius:6px;padding:.8rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
+    button:active{transform:translateY(0)}
+    .error{color:var(--danger);font-weight:700}
+    .note{margin:0;color:var(--muted);line-height:1.6}
+    @media(max-width:760px){.page{width:min(100% - 1rem,1080px);margin:1.25rem auto}.header{flex-direction:column;align-items:flex-start}.feature-grid{grid-template-columns:1fr}.status-guide{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:2.25rem}}
+    @media(max-width:420px){.status-guide{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -656,7 +359,7 @@ export async function startViewer({
         </div>
         <form method="post" action="/api/verify" accept-charset="utf-8">
           <label for="receipt">Receipt JSON</label>
-          <textarea id="receipt" name="receipt" placeholder="{\n  \"version\": 1,\n  \"payload\": { ... },\n  \"receiptHash\": \"...\"\n}"></textarea>
+          <textarea id="receipt" name="receipt" placeholder="{\n  &quot;version&quot;: 1,\n  &quot;payload&quot;: { ... },\n  &quot;receiptHash&quot;: &quot;...&quot;\n}"></textarea>
           <div class="button-row">
             <button type="submit">Verify receipt</button>
           </div>
@@ -791,7 +494,7 @@ export async function startViewer({
             return;
           }
           const uploadedHtml = renderHtml(envelopeCandidate, uploadedResult);
-          const uploadBanner = `<div style="margin: 0 0 1rem; padding: 0.9rem 1rem; border-left: 4px solid #0a7a55; background: #eefaf4; color: #10231d; border-radius: 8px; font-weight: 600;">Receipt upload</div>`;
+          const uploadBanner = `<div style="margin:0 0 1rem;padding:.9rem 1rem;border-left:4px solid var(--green,#14f195);background:rgba(20,241,149,.08);color:var(--text,#f4f3f8);border-radius:8px;font-weight:600;font-family:'SFMono-Regular',Consolas,monospace;font-size:.85rem;letter-spacing:.04em">Receipt upload</div>`;
           send(
             response,
             200,
