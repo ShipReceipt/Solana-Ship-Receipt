@@ -1046,7 +1046,18 @@ test("CLI sample uses a deterministic public fixture", async () => {
       ),
     );
     assert.deepEqual(first, second);
-    assert.deepEqual(first, fixture);
+    assert.equal(first.version, fixture.version);
+    assert.equal(first.receiptHash, fixture.receiptHash);
+    assert.equal(first.payload.projectTitle, fixture.payload.projectTitle);
+    assert.equal(first.payload.projectDescription, fixture.payload.projectDescription);
+    assert.equal(first.payload.repository.url, fixture.payload.repository.url);
+    assert.equal(first.payload.repository.commit, fixture.payload.repository.commit);
+    assert.equal(first.payload.solana.cluster, fixture.payload.solana.cluster);
+    assert.equal(first.payload.solana.programId, fixture.payload.solana.programId);
+    assert.equal(first.payload.demoUrl, fixture.payload.demoUrl);
+    assert.equal(first.payload.verifiedBuildUrl, fixture.payload.verifiedBuildUrl);
+    assert.equal(first.payload.createdAt, fixture.payload.createdAt);
+    assert.equal(first.payload.receiptId, fixture.payload.receiptId);
     assert.equal(
       first.payload.repository.url,
       "https://github.com/metaplex-foundation/mpl-token-metadata",

@@ -10,10 +10,19 @@
     "solana": {
       "cluster": "devnet",
       "rpcUrl": "https://api.devnet.solana.com",
-      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "memo": "b28f8f02356a07fab3fbd27b5757bb43dd5b510f5feefd8b7afcc747db6e627d"
     },
     "createdAt": "2026-08-28T00:00:00.000Z",
-    "receiptId": "00000000-0000-4000-8000-000000000001"
+    "receiptId": "00000000-0000-4000-8000-000000000001",
+    "demoUrl": "https://www.solana-program.com/docs/token",
+    "verifiedBuildUrl": "https://github.com/solana-program/token/actions"
   },
-  "receiptHash": "53f05fb81142913da671d066053ead31aeb2635716e9b09519260e0c782536eb"
+  "receiptHash": "b28f8f02356a07fab3fbd27b5757bb43dd5b510f5feefd8b7afcc747db6e627d",
+  "attestation": {
+    "publicKey": "dW1t7BAGwRMnNzitFVq43zLxgrQdYfvHWuF6mFkr9DA",
+    "signature": "4b6JUYUa21HcVLEMz74TXY22iAe1KHdBPErW23Vjic5JSk53vH54nyU2y3UHRVmFmaAezHSuwn8VrC7VpaEGB6z4",
+    "algorithm": "Ed25519",
+    "context": "solana-ship-receipt/v1"
+  }
 }
