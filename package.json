@@ -38,7 +38,8 @@
     "sample": "node src/cli.mjs sample",
     "serve:local": "node -e \"const fs=require('fs'); if (fs.existsSync('sample.receipt.json')) fs.rmSync('sample.receipt.json');\" && node src/cli.mjs sample --out sample.receipt.json && node src/cli.mjs serve sample.receipt.json --port 8787",
     "serve:public": "node -e \"const fs=require('fs'); if (fs.existsSync('sample.receipt.json')) fs.rmSync('sample.receipt.json');\" && node src/cli.mjs sample --out sample.receipt.json && node src/cli.mjs serve sample.receipt.json --host 0.0.0.0 --port 8787 --network --public",
-    "deploy:public": "node -e \"const fs=require('fs'); if (fs.existsSync('sample.receipt.json')) fs.rmSync('sample.receipt.json');\" && node src/cli.mjs sample --out sample.receipt.json && node src/cli.mjs serve sample.receipt.json --host 0.0.0.0 --port 8787 --network --public"
+    "deploy:public": "node -e \"const fs=require('fs'); if (fs.existsSync('sample.receipt.json')) fs.rmSync('sample.receipt.json');\" && node src/cli.mjs sample --out sample.receipt.json && node src/cli.mjs serve sample.receipt.json --host 0.0.0.0 --port 8787 --network --public",
+    "verify:fixtures": "node src/cli.mjs verify fixtures/public-projects/solana-ship-receipt.json --network --json"
   },
   "engines": {
     "node": ">=20"

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Solana Ship Receipt",
+    "projectDescription": "A portable, tamper-evident build receipt for Solana project submissions.",
+    "repository": {
+      "url": "https://github.com/ShipReceipt/Solana-Ship-Receipt",
+      "commit": "de9bdb5183f387cfc8af271c0d5e122be4419581"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com"
+    },
+    "demoUrl": "https://solana-ship-receipt.onrender.com",
+    "createdAt": "2026-08-29T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000006"
+  },
+  "receiptHash": "994d702af0f3949e7a338eca41664a4134a9a52adeba610d8f2aa0ee08c050ed"
+}

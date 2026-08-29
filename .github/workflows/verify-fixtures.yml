@@ -1,0 +1,65 @@
+name: Verify fixtures
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 12 * * 1"
+  push:
+    branches:
+      - main
+    paths:
+      - "fixtures/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Check source syntax
+        run: npm run check:syntax
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify self-referential receipt against public evidence
+        run: node src/cli.mjs verify fixtures/public-projects/solana-ship-receipt.json --network --json | tee fixtures/verification-self-referential.json
+
+      - name: Verify all fixtures locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          failed=0
+          for fixture in fixtures/public-projects/*.json; do
+            echo "--- Verifying $fixture ---"
+            if node src/cli.mjs verify "$fixture" --json; then
+              echo "PASS: $fixture"
+            else
+              echo "FAIL: $fixture"
+              failed=1
+            fi
+          done
+          exit $failed
+
+      - name: Upload verification results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fixture-verification
+          path: fixtures/verification-*.json
+          if-no-files-found: ignore

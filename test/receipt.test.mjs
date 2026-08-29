@@ -2385,14 +2385,15 @@ test("guided receipt skill documents the safe evidence workflow", async () => {
   assert.match(ui, /default_prompt:/);
 });
 
-test("ships five reproducible receipts from public Solana repositories", async () => {
+test("ships six reproducible receipts from public Solana repositories", async () => {
   const fixtureDir = join(process.cwd(), "fixtures", "public-projects");
   const names = (await readdir(fixtureDir))
     .filter((name) => name.endsWith(".json"))
     .sort();
-  assert.equal(names.length, 5);
+  assert.equal(names.length, 6);
   const repositories = new Set();
   let programEvidence = 0;
+  let demoEvidence = 0;
   for (const name of names) {
     const envelope = JSON.parse(await readFile(join(fixtureDir, name), "utf8"));
     const result = await verifyEnvelope(envelope);
@@ -2403,8 +2404,10 @@ test("ships five reproducible receipts from public Solana repositories", async (
     );
     assert.match(envelope.payload.repository.commit, /^[0-9a-f]{40}$/);
     if (envelope.payload.solana.programId) programEvidence += 1;
+    if (envelope.payload.demoUrl) demoEvidence += 1;
     repositories.add(envelope.payload.repository.url);
   }
-  assert.equal(repositories.size, 5);
+  assert.equal(repositories.size, 6);
   assert.equal(programEvidence, 5);
+  assert.ok(demoEvidence >= 1, "at least one fixture should have a demo URL");
 });
