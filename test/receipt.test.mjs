@@ -1803,7 +1803,7 @@ test("local viewer is loopback-only, read-only, and exposes HTML plus JSON", asy
       page.headers.get("permissions-policy"),
       "camera=(), microphone=(), geolocation=()",
     );
-    assert.match(await page.text(), /Local viewer/);
+    assert.match(await page.text(), /Solana Ship Receipt/);
 
     const health = await fetch(`${viewer.url}health`);
     assert.equal(health.status, 200);

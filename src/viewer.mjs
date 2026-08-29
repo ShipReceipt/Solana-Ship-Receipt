@@ -129,16 +129,10 @@ export async function startViewer({
     }
   };
   const html = renderHtml(envelope, result);
-  const uploadPage = `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>Local viewer · Solana Ship Receipt</title>
-  <style>
+  const sharedCss = `
     @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     @keyframes glow{0%,100%{box-shadow:0 0 8px rgba(20,241,149,.25)}50%{box-shadow:0 0 16px rgba(20,241,149,.45)}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
     :root{
       --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
       --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
@@ -146,6 +140,7 @@ export async function startViewer({
       --green-soft:rgba(20,241,149,.1);--purple-soft:rgba(153,69,255,.12);
       --shadow:0 24px 60px rgba(0,0,0,.35);
       --glow-green:0 0 20px rgba(20,241,149,.15);
+      --danger:#ff6b61;
     }
     *{box-sizing:border-box;margin:0}
     html,body{min-height:100%}
@@ -156,62 +151,111 @@ export async function startViewer({
     .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.25rem .4rem 1.2rem;border-bottom:1px solid var(--line);margin-bottom:1.4rem}
     .brand{display:inline-flex;align-items:center;gap:.75rem;letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;font-weight:800;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace}
     .brand-mark{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--purple),var(--green));animation:glow 3s ease-in-out infinite}
+    .brand-nav{display:flex;gap:.5rem;margin-left:auto}
+    .brand-nav a{color:var(--muted);text-decoration:none;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:.35rem .65rem;border-radius:4px;border:1px solid transparent;transition:all .2s;font-family:"SFMono-Regular",Consolas,monospace}
+    .brand-nav a:hover{color:var(--green);border-color:rgba(20,241,149,.2);background:var(--green-soft)}
+    .brand-nav a.active{color:var(--green);border-color:rgba(20,241,149,.3);background:var(--green-soft)}
     .status-pill{display:inline-flex;align-items:center;gap:.55rem;border:1px solid rgba(20,241,149,.35);border-radius:999px;background:var(--green-soft);padding:.48rem .8rem;color:var(--green);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
     .status-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(20,241,149,.5)}
-    .content{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);gap:1.5rem;align-items:start;position:relative;z-index:1}
     .card{background:rgba(21,21,30,.85);border:1px solid var(--line);border-radius:8px;padding:1.6rem;backdrop-filter:blur(8px)}
     h1{margin:0 0 .7rem;font-family:Georgia,"Times New Roman",serif;font-size:2.8rem;line-height:1.04;letter-spacing:0;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
     .lede{margin:0 0 1.2rem;max-width:62ch;color:var(--muted);line-height:1.6}
     label{display:block;margin-bottom:.55rem;color:var(--muted);font-size:.73rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-family:"SFMono-Regular",Consolas,monospace}
+    label .optional{color:rgba(146,144,159,.5);font-weight:400;text-transform:none;letter-spacing:0}
     textarea{width:100%;min-height:240px;margin-bottom:1rem;background:rgba(4,12,10,.72);border:1px solid rgba(154,230,255,.18);border-radius:6px;padding:1rem 1rem .95rem;resize:vertical;color:var(--text);font:.9rem/1.6 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;transition:border-color .2s,box-shadow .2s}
-    textarea::placeholder{color:rgba(185,217,207,.7)}
+    textarea::placeholder{color:rgba(185,217,207,.5)}
     textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
     input[type="file"]{width:100%;margin-top:.2rem;color:var(--muted)}
     .button-row{display:flex;align-items:center;gap:.85rem;margin-top:.7rem}
-    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.4rem 0 1.6rem}
+    button{appearance:none;border:0;border-radius:6px;padding:.8rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3);font-size:.9rem}
+    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
+    button:active{transform:translateY(0)}
+    button.secondary{background:rgba(255,255,255,.06);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+    button.secondary:hover{background:rgba(255,255,255,.1)}
+    .note{margin:0;color:var(--muted);line-height:1.6;font-size:.88rem}
+    .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.4rem 0}
+    .step{position:relative;padding:1.2rem;border:1px solid var(--line);border-radius:8px;background:rgba(10,17,14,.6);transition:border-color .2s,transform .2s}
+    .step:hover{border-color:rgba(20,241,149,.2);transform:translateY(-2px)}
+    .step-num{display:inline-flex;align-items:center;justify-content:center;width:1.8rem;height:1.8rem;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--green));color:#fff;font-size:.75rem;font-weight:900;margin-bottom:.7rem}
+    .step strong{display:block;margin-bottom:.3rem;font-size:.95rem}
+    .step span{color:var(--muted);font-size:.85rem;line-height:1.5}
+    .demo-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:1.2rem 0}
+    .demo-btn{display:block;text-align:left;padding:.85rem 1rem;border:1px solid var(--line);border-radius:6px;background:rgba(21,21,30,.6);color:var(--text);text-decoration:none;transition:all .2s;cursor:pointer}
+    .demo-btn:hover{border-color:rgba(20,241,149,.3);background:rgba(20,241,149,.05);transform:translateY(-1px)}
+    .demo-btn strong{display:block;margin-bottom:.2rem;font-size:.88rem;color:var(--text)}
+    .demo-btn span{font-size:.78rem;color:var(--muted)}
+    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.2rem 0 1.5rem}
     .feature{background:rgba(10,17,14,.9);border:1px solid var(--line);border-radius:6px;padding:1rem;transition:border-color .2s,transform .2s}
     .feature:hover{border-color:rgba(20,241,149,.2);transform:translateY(-2px)}
     .feature small{display:block;margin-bottom:.5rem;color:var(--green);font-weight:800;letter-spacing:.09em;text-transform:uppercase}
     .feature strong{display:block;margin-bottom:.35rem;font-size:1rem}
     .feature span{color:var(--muted);line-height:1.5;font-size:.92rem}
-    button{appearance:none;border:0;border-radius:6px;padding:.8rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
-    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
-    button:active{transform:translateY(0)}
-    .meta{display:grid;gap:.9rem}
-    .stat{border:1px solid var(--line);border-radius:6px;background:rgba(21,21,30,.6);padding:1rem 1.1rem;transition:border-color .2s}
-    .stat:hover{border-color:rgba(20,241,149,.15)}
-    .stat strong{display:block;margin-bottom:.3rem;color:var(--green);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
-    .stat span{color:var(--muted);line-height:1.5}
-    .note{margin:0;color:var(--muted);line-height:1.6;font-size:.88rem}
-    @media(max-width:760px){.page{width:min(100% - 1rem,760px);margin:1.25rem auto}.header{flex-direction:column;align-items:flex-start}.content{grid-template-columns:1fr}h1{font-size:2.25rem}}
-  </style>
+    .field{display:grid;gap:.45rem;margin-bottom:1rem}
+    .field-hint{font-size:.78rem;color:var(--muted);margin-top:-.2rem}
+    input,select{width:100%;border:1px solid var(--line);border-radius:6px;padding:.8rem;background:var(--panel-alt);color:var(--text);font:.88rem/1.5 "SFMono-Regular",Consolas,monospace;transition:border-color .2s,box-shadow .2s}
+    input:focus-visible,select:focus-visible{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
+    .wide{grid-column:1/-1}
+    .status-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;margin:1.2rem 0 1.5rem}
+    .status-guide div{border-top:2px solid var(--green);padding:.7rem .75rem 0;background:rgba(10,17,14,.55);border-radius:0 0 6px 6px;transition:border-color .2s,transform .2s}
+    .status-guide div:hover{transform:translateY(-2px)}
+    .status-guide strong{display:block;margin-bottom:.25rem;font-size:.85rem}
+    .status-guide span{color:var(--muted);font-size:.78rem;line-height:1.4}
+    .error{color:var(--danger);font-weight:700}
+    @media(max-width:760px){.page{width:min(100% - 1rem,760px);margin:1.25rem auto}.header{flex-direction:column;align-items:flex-start}.brand-nav{margin-left:0}.content{grid-template-columns:1fr}h1{font-size:2.25rem}.steps{grid-template-columns:1fr}.demo-grid{grid-template-columns:1fr}.feature-grid{grid-template-columns:1fr}.status-guide{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:420px){.status-guide{grid-template-columns:1fr}}
+  `;
+
+  const navHtml = `<div class="brand-nav">
+    <a href="/">Upload</a>
+    <a href="/builder">Builder</a>
+    <a href="/review">Verify</a>
+  </div>`;
+
+  const uploadPage = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Solana Ship Receipt — Verify Build Provenance</title>
+  <style>${sharedCss}</style>
 </head>
 <body>
   <div class="page">
     <div class="shell">
       <div class="header">
         <div class="brand"><span class="brand-mark"></span> Solana Ship Receipt</div>
-        <div class="status-pill"><span class="status-dot"></span> Local viewer</div>
+        ${navHtml}
       </div>
-      <div class="content">
-        <main class="card">
-          <h1>Receipt upload</h1>
-          <p class="lede">Paste a canonical receipt JSON to review it in the same local viewer flow and inspect the verification result without leaving the page.</p>
+      <div class="content" style="display:block">
+        <main class="card" style="margin-bottom:1.2rem">
+          <h1>Verify build provenance</h1>
+          <p class="lede">A tamper-evident receipt that binds a Git commit, Solana program, and optional wallet signature into a single verifiable artifact. Paste a receipt to verify it, or start from scratch.</p>
+          <div class="steps">
+            <div class="step"><span class="step-num">1</span><strong>Upload or paste</strong><span>Drop a receipt JSON or paste it into the verifier.</span></div>
+            <div class="step"><span class="step-num">2</span><strong>Verify evidence</strong><span>Check hash integrity, on-chain state, Git commit, and wallet signature.</span></div>
+            <div class="step"><span class="step-num">3</span><strong>Share result</strong><span>Render a public receipt page or export the verification bundle.</span></div>
+          </div>
           <form method="post" action="/" accept-charset="utf-8" enctype="multipart/form-data">
             <label for="receipt">Receipt JSON</label>
-            <textarea id="receipt" name="receipt" placeholder="{\n  &quot;version&quot;: 1,\n  &quot;payload&quot;: { ... },\n  &quot;receiptHash&quot;: &quot;...&quot;\n}"></textarea>
-            <label for="receipt-file">Upload JSON</label>
+            <textarea id="receipt" name="receipt" placeholder="Paste your receipt JSON here...&#10;&#10;{&#10;  &quot;version&quot;: 1,&#10;  &quot;payload&quot;: { ... },&#10;  &quot;receiptHash&quot;: &quot;...&quot;&#10;}"></textarea>
+            <label for="receipt-file">Or upload a file</label>
             <input id="receipt-file" type="file" name="receipt-file" accept="application/json">
             <div class="button-row">
               <button type="submit">Review receipt</button>
+              <a href="/review" style="color:var(--muted);font-size:.85rem;text-decoration:none">or use the verifier page &rarr;</a>
             </div>
           </form>
         </main>
-        <aside class="meta">
-          <div class="stat"><strong>What it checks</strong><span>Receipt integrity, canonical payload hash, public evidence, and optional wallet attestation.</span></div>
-          <div class="stat"><strong>Scope</strong><span>Read-only verification designed for local review and public hosting with explicit opt-in.</span></div>
-          <p class="note">This viewer is intentionally loopback-safe by default and only exposes the same verification flow already used by the CLI and reviewer bundle.</p>
-        </aside>
+        <div class="card">
+          <label style="margin-bottom:.8rem">Quick start — try a demo receipt</label>
+          <div class="demo-grid">
+            <button class="demo-btn" type="button" onclick="fetch('/api/receipt').then(r=>r.json()).then(j=>{document.getElementById('receipt').value=JSON.stringify(j,null,2)})"><strong>Solana Ship Receipt</strong><span>Self-referential 9/9 verified receipt</span></button>
+            <a class="demo-btn" href="/review"><strong>Verifier page</strong><span>Paste JSON and get instant verification results</span></a>
+            <a class="demo-btn" href="/builder"><strong>Builder flow</strong><span>Create a new receipt from project metadata</span></a>
+            <a class="demo-btn" href="/api/verify" target="_blank"><strong>API endpoint</strong><span>POST JSON to get machine-readable checks</span></a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -225,57 +269,44 @@ export async function startViewer({
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Create receipt · Solana Ship Receipt</title>
-  <style>
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    :root{
-      --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
-      --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
-      --purple:#9945ff;--green:#14f195;
-      --shadow:0 24px 60px rgba(0,0,0,.35);
-    }
-    *{box-sizing:border-box;margin:0}
-    html,body{min-height:100%}
-    body{background:var(--bg);color:var(--text);font:16px/1.55 "Trebuchet MS",Verdana,sans-serif;background-image:radial-gradient(ellipse at 20% 0%,rgba(153,69,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(20,241,149,.04) 0%,transparent 50%)}
-    .page{width:min(760px,calc(100% - 2rem));margin:2.5rem auto;animation:fadeUp .5s ease-out both}
-    .shell{overflow:hidden;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:var(--shadow)}
-    .shell::before{content:"";display:block;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
-    header{padding:2rem 2rem 1.8rem;border-bottom:1px solid var(--line)}
-    .eyebrow,label{color:var(--muted);font:.7rem/1.4 "SFMono-Regular",Consolas,monospace;letter-spacing:.1em;text-transform:uppercase}
-    .eyebrow{margin:0 0 1.2rem;color:var(--green)}
-    h1{margin:0;font:700 2.8rem/1.05 Georgia,"Times New Roman",serif;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
-    .lede{max-width:58ch;margin:.8rem 0 0;color:var(--muted)}
-    form{display:grid;gap:1rem;padding:2rem}
+  <style>${sharedCss}
     .fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
-    .field{display:grid;gap:.45rem}
-    .wide{grid-column:1/-1}
-    input,textarea,select{width:100%;border:1px solid var(--line);border-radius:6px;padding:.8rem;background:var(--panel-alt);color:var(--text);font:.88rem/1.5 "SFMono-Regular",Consolas,monospace;transition:border-color .2s,box-shadow .2s}
-    textarea{min-height:100px;resize:vertical}
-    input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
-    button{justify-self:start;border:0;border-radius:6px;padding:.85rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
-    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
-    button:active{transform:translateY(0)}
-    .note{margin:0;color:var(--muted);font-size:.85rem}
-    @media(max-width:620px){.page{width:min(100% - 1rem,760px);margin:1rem auto}header,form{padding:1.5rem}h1{font-size:2.25rem}.fields{grid-template-columns:1fr}.wide{grid-column:auto}}
+    @media(max-width:620px){.fields{grid-template-columns:1fr}.wide{grid-column:auto}}
   </style>
 </head>
 <body>
   <div class="page"><div class="shell">
-    <header><p class="eyebrow">Solana Ship Receipt · builder flow</p><h1>Create a receipt</h1><p class="lede">Bind a public Git revision to optional Solana, demo, and build evidence. The result is rendered for review immediately.</p></header>
-    <form method="post" action="/" accept-charset="utf-8">
-      <div class="fields">
-        <div class="field wide"><label for="project-title">Project title</label><input id="project-title" name="projectTitle" required minlength="3" maxlength="120"></div>
-        <div class="field wide"><label for="project-description">Description</label><textarea id="project-description" name="projectDescription" required minlength="10" maxlength="1000"></textarea></div>
-        <div class="field"><label for="repository-url">Repository URL</label><input id="repository-url" name="repositoryUrl" type="url" placeholder="https://github.com/owner/project" required></div>
-        <div class="field"><label for="commit">Exact commit SHA</label><input id="commit" name="commit" pattern="[0-9a-fA-F]{40}" required></div>
-        <div class="field"><label for="cluster">Solana cluster</label><select id="cluster" name="cluster"><option value="devnet">devnet</option><option value="testnet">testnet</option><option value="mainnet">mainnet</option></select></div>
-        <div class="field"><label for="program-id">Program ID</label><input id="program-id" name="programId" placeholder="Optional executable account"></div>
-        <div class="field"><label for="transaction-signature">Transaction signature</label><input id="transaction-signature" name="transactionSignature" placeholder="Optional confirmed transaction"></div>
-        <div class="field"><label for="demo-url">Demo URL</label><input id="demo-url" name="demoUrl" type="url" placeholder="Optional public demo"></div>
-        <div class="field"><label for="verified-build-url">Verified-build URL</label><input id="verified-build-url" name="verifiedBuildUrl" type="url" placeholder="Optional build evidence"></div>
+    <div class="header">
+      <div class="brand"><span class="brand-mark"></span> Solana Ship Receipt</div>
+      ${navHtml}
+    </div>
+    <main class="card">
+      <h1>Create a receipt</h1>
+      <p class="lede">Bind a public Git revision to Solana program evidence. Fill in the required fields below — optional fields strengthen the receipt but aren't required.</p>
+      <div class="steps" style="margin-bottom:1.5rem">
+        <div class="step"><span class="step-num">1</span><strong>Fill in details</strong><span>Project name, repo URL, commit SHA, and Solana program ID.</span></div>
+        <div class="step"><span class="step-num">2</span><strong>Add evidence</strong><span>Optional: demo URL, verified build, transaction signature.</span></div>
+        <div class="step"><span class="step-num">3</span><strong>Sign &amp; share</strong><span>Wallet signing and memo anchoring happen locally after creation.</span></div>
       </div>
-      <p class="note">Wallet signing and Memo anchoring happen locally after creation. This hosted flow never requests private keys or submits transactions.</p>
-      <button type="submit">Create receipt</button>
-    </form>
+      <form method="post" action="/" accept-charset="utf-8">
+        <div class="fields">
+          <div class="field wide"><label for="project-title">Project title <span class="optional">(required)</span></label><input id="project-title" name="projectTitle" required minlength="3" maxlength="120" placeholder="e.g. Metaplex Token Metadata"></div>
+          <div class="field wide"><label for="project-description">Description <span class="optional">(required)</span></label><textarea id="project-description" name="projectDescription" required minlength="10" maxlength="1000" placeholder="Brief description of what this project does..."></textarea></div>
+          <div class="field"><label for="repository-url">Repository URL <span class="optional">(required)</span></label><input id="repository-url" name="repositoryUrl" type="url" placeholder="https://github.com/owner/project" required><div class="field-hint">Public GitHub repository URL</div></div>
+          <div class="field"><label for="commit">Commit SHA <span class="optional">(required)</span></label><input id="commit" name="commit" pattern="[0-9a-fA-F]{40}" required placeholder="40-character full SHA" maxlength="40"><div class="field-hint">Full 40-character Git commit hash</div></div>
+          <div class="field"><label for="cluster">Solana cluster</label><select id="cluster" name="cluster"><option value="devnet">devnet</option><option value="testnet">testnet</option><option value="mainnet">mainnet</option></select></div>
+          <div class="field"><label for="program-id">Program ID <span class="optional">(optional)</span></label><input id="program-id" name="programId" placeholder="e.g. MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"><div class="field-hint">The deployed Solana program address</div></div>
+          <div class="field"><label for="transaction-signature">Transaction signature <span class="optional">(optional)</span></label><input id="transaction-signature" name="transactionSignature" placeholder="Confirmed tx signature"><div class="field-hint">Evidence of on-chain deployment</div></div>
+          <div class="field"><label for="demo-url">Demo URL <span class="optional">(optional)</span></label><input id="demo-url" name="demoUrl" type="url" placeholder="https://your-project.vercel.app"><div class="field-hint">Live deployment URL (must return HTTP 200)</div></div>
+          <div class="field"><label for="verified-build-url">Verified-build URL <span class="optional">(optional)</span></label><input id="verified-build-url" name="verifiedBuildUrl" type="url" placeholder="https://github.com/owner/project/actions"><div class="field-hint">CI workflow proving reproducible builds</div></div>
+        </div>
+        <p class="note" style="margin-bottom:1rem">Wallet signing and Memo anchoring happen locally after creation. This hosted flow never requests private keys or submits transactions.</p>
+        <div class="button-row">
+          <button type="submit">Create receipt</button>
+          <a href="/" style="color:var(--muted);font-size:.85rem;text-decoration:none">&larr; back to upload</a>
+        </div>
+      </form>
+    </main>
   </div></div>
 </body>
 </html>`;
@@ -287,53 +318,9 @@ export async function startViewer({
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="dark">
   <title>Verify receipt · Solana Ship Receipt</title>
-  <style>
-    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    :root{
-      --bg:#0a0a0f;--panel:rgba(17,17,24,.92);--panel-alt:#15151e;
-      --line:rgba(255,255,255,.08);--text:#f4f3f8;--muted:#92909f;
-      --purple:#9945ff;--green:#14f195;
-      --green-soft:rgba(20,241,149,.1);--purple-soft:rgba(153,69,255,.12);
-      --shadow:0 24px 60px rgba(0,0,0,.35);
-      --danger:#ff6b61;
-    }
-    *{box-sizing:border-box;margin:0}
-    html,body{min-height:100%}
-    body{font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--text);background:var(--bg);background-image:radial-gradient(ellipse at 20% 0%,rgba(153,69,255,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(20,241,149,.04) 0%,transparent 50%)}
-    .page{width:min(1080px,calc(100% - 2rem));margin:3rem auto;animation:fadeUp .5s ease-out both}
-    .shell{position:relative;overflow:hidden;padding:1.25rem;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:var(--shadow)}
-    .shell::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--purple),var(--green))}
-    .header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.25rem .4rem 1.2rem;border-bottom:1px solid var(--line);margin-bottom:1.4rem}
-    .brand{display:inline-flex;align-items:center;gap:.75rem;letter-spacing:.18em;text-transform:uppercase;font-size:.72rem;font-weight:800;color:var(--green);font-family:"SFMono-Regular",Consolas,monospace}
-    .brand-mark{width:12px;height:12px;border-radius:3px;background:linear-gradient(135deg,var(--purple),var(--green))}
-    .status-pill{display:inline-flex;align-items:center;gap:.55rem;border:1px solid rgba(20,241,149,.35);border-radius:999px;background:var(--green-soft);padding:.48rem .8rem;color:var(--green);font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
-    .status-dot{width:.55rem;height:.55rem;border-radius:50%;background:var(--green);box-shadow:0 0 8px rgba(20,241,149,.5)}
-    .card{background:rgba(21,21,30,.85);border:1px solid var(--line);border-radius:8px;padding:1.6rem;backdrop-filter:blur(8px)}
-    h1{margin:0 0 .7rem;font-family:Georgia,"Times New Roman",serif;font-size:3rem;line-height:1.04;letter-spacing:0;background:linear-gradient(90deg,var(--purple),var(--green));-webkit-background-clip:text;background-clip:text;color:transparent}
-    .lede{margin:0 0 1.2rem;max-width:62ch;color:var(--muted);line-height:1.6}
-    label{display:block;margin-bottom:.55rem;color:var(--muted);font-size:.73rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;font-family:"SFMono-Regular",Consolas,monospace}
-    textarea{width:100%;min-height:240px;margin-bottom:1rem;background:rgba(4,12,10,.72);border:1px solid rgba(154,230,255,.18);border-radius:6px;padding:1rem 1rem .95rem;resize:vertical;color:var(--text);font:.9rem/1.6 "SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;transition:border-color .2s,box-shadow .2s}
-    textarea::placeholder{color:rgba(185,217,207,.7)}
-    textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(20,241,149,.12)}
-    .button-row{display:flex;align-items:center;gap:.85rem;margin-top:.7rem}
-    .status-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.65rem;margin:1.2rem 0 1.5rem}
-    .status-guide div{border-top:2px solid var(--green);padding:.7rem .75rem 0;background:rgba(10,17,14,.55);border-radius:0 0 6px 6px;transition:border-color .2s,transform .2s}
-    .status-guide div:hover{transform:translateY(-2px)}
-    .status-guide strong{display:block;margin-bottom:.25rem;font-size:.85rem}
-    .status-guide span{color:var(--muted);font-size:.78rem;line-height:1.4}
-    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem;margin:1.2rem 0 1.5rem}
-    .feature{background:rgba(10,17,14,.9);border:1px solid var(--line);border-radius:6px;padding:1rem;transition:border-color .2s,transform .2s}
-    .feature:hover{border-color:rgba(20,241,149,.2);transform:translateY(-2px)}
-    .feature small{display:block;margin-bottom:.5rem;color:var(--green);font-weight:800;letter-spacing:.09em;text-transform:uppercase}
-    .feature strong{display:block;margin-bottom:.35rem;font-size:1rem}
-    .feature span{color:var(--muted);line-height:1.5;font-size:.92rem}
-    button{appearance:none;border:0;border-radius:6px;padding:.8rem 1.4rem;background:linear-gradient(135deg,var(--purple),#b06aff);color:#fff;font-weight:900;cursor:pointer;transition:transform .15s,box-shadow .2s;box-shadow:0 4px 16px rgba(153,69,255,.3)}
-    button:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(153,69,255,.45)}
-    button:active{transform:translateY(0)}
-    .error{color:var(--danger);font-weight:700}
-    .note{margin:0;color:var(--muted);line-height:1.6}
-    @media(max-width:760px){.page{width:min(100% - 1rem,1080px);margin:1.25rem auto}.header{flex-direction:column;align-items:flex-start}.feature-grid{grid-template-columns:1fr}.status-guide{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:2.25rem}}
-    @media(max-width:420px){.status-guide{grid-template-columns:1fr}}
+  <style>${sharedCss}
+    .or-divider{display:flex;align-items:center;gap:1rem;margin:1.2rem 0;color:var(--muted);font-size:.8rem;text-transform:uppercase;letter-spacing:.1em}
+    .or-divider::before,.or-divider::after{content:"";flex:1;height:1px;background:var(--line)}
   </style>
 </head>
 <body>
@@ -341,16 +328,16 @@ export async function startViewer({
     <div class="shell">
       <div class="header">
         <div class="brand"><span class="brand-mark"></span> Solana Ship Receipt</div>
-        <div class="status-pill"><span class="status-dot"></span> Verify receipt</div>
+        ${navHtml}
       </div>
       <main class="card">
         <h1>Verify receipt</h1>
-        <p class="lede">Paste a canonical receipt JSON and submit it to the verifier API to confirm the receipt hash, schema, and public evidence.</p>
+        <p class="lede">Paste a receipt JSON below to verify its integrity, on-chain evidence, and wallet attestation. The verifier checks hash consistency, Git commit, Solana program state, demo URL, and build provenance.</p>
         <div class="status-guide" aria-label="Verification status guide">
-          <div><strong>Verified</strong><span>Evidence matched.</span></div>
-          <div><strong>Warning</strong><span>Could not complete.</span></div>
-          <div><strong>Failed</strong><span>Evidence did not match.</span></div>
-          <div><strong>Not checked</strong><span>No evidence supplied.</span></div>
+          <div><strong style="color:var(--green)">&#10003; Verified</strong><span>Evidence matched and confirmed.</span></div>
+          <div><strong style="color:var(--danger)">&#10007; Failed</strong><span>Evidence did not match.</span></div>
+          <div><strong style="color:#f5a623">&#9888; Warning</strong><span>Could not complete check.</span></div>
+          <div><strong style="color:var(--muted)">&mdash; Not checked</strong><span>No evidence supplied.</span></div>
         </div>
         <div class="feature-grid" aria-label="Evidence flow summary">
           <div class="feature">
@@ -371,11 +358,18 @@ export async function startViewer({
         </div>
         <form method="post" action="/api/verify" accept-charset="utf-8">
           <label for="receipt">Receipt JSON</label>
-          <textarea id="receipt" name="receipt" placeholder="{\n  &quot;version&quot;: 1,\n  &quot;payload&quot;: { ... },\n  &quot;receiptHash&quot;: &quot;...&quot;\n}"></textarea>
+          <textarea id="receipt" name="receipt" placeholder="Paste your receipt JSON here...&#10;&#10;{&#10;  &quot;version&quot;: 1,&#10;  &quot;payload&quot;: { ... },&#10;  &quot;receiptHash&quot;: &quot;...&quot;&#10;}"></textarea>
           <div class="button-row">
             <button type="submit">Verify receipt</button>
           </div>
         </form>
+        <div class="or-divider">or try a demo</div>
+        <div class="demo-grid">
+          <button class="demo-btn" type="button" onclick="fetch('/api/receipt').then(r=>r.json()).then(j=>{document.getElementById('receipt').value=JSON.stringify(j,null,2);document.querySelector('form').submit()})"><strong>Solana Ship Receipt</strong><span>Load and verify the self-referential receipt (9/9)</span></button>
+          <a class="demo-btn" href="/"><strong>Upload page</strong><span>Paste or upload a receipt JSON file</span></a>
+          <a class="demo-btn" href="/builder"><strong>Builder flow</strong><span>Create a new receipt from scratch</span></a>
+          <a class="demo-btn" href="/api/verify" target="_blank"><strong>API docs</strong><span>POST JSON to /api/verify for programmatic access</span></a>
+        </div>
       </main>
     </div>
   </div>
