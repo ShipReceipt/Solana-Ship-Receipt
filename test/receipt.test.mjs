@@ -2408,6 +2408,6 @@ test("ships six reproducible receipts from public Solana repositories", async ()
     repositories.add(envelope.payload.repository.url);
   }
   assert.equal(repositories.size, 6);
-  assert.equal(programEvidence, 5);
+  assert.equal(programEvidence, 6);
   assert.ok(demoEvidence >= 1, "at least one fixture should have a demo URL");
 });

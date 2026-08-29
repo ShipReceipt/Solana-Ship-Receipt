@@ -9,11 +9,13 @@
     },
     "solana": {
       "cluster": "devnet",
-      "rpcUrl": "https://api.devnet.solana.com"
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
     },
     "demoUrl": "https://solana-ship-receipt.onrender.com",
+    "verifiedBuildUrl": "https://github.com/ShipReceipt/Solana-Ship-Receipt/actions/workflows/ci.yml",
     "createdAt": "2026-08-29T00:00:00.000Z",
     "receiptId": "00000000-0000-4000-8000-000000000006"
   },
-  "receiptHash": "994d702af0f3949e7a338eca41664a4134a9a52adeba610d8f2aa0ee08c050ed"
+  "receiptHash": "51ad1d39b96deac253df7c28f7b57521258fb6e8d557809559df608411736635"
 }
