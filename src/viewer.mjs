@@ -16,6 +16,7 @@ function securityHeaders(contentType) {
     "content-security-policy":
       "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'",
     "referrer-policy": "no-referrer",
+    "cross-origin-opener-policy": "same-origin",
     "cross-origin-resource-policy": "same-origin",
     "permissions-policy": "camera=(), microphone=(), geolocation=()",
     "x-content-type-options": "nosniff",
@@ -705,6 +706,11 @@ export async function startViewer({
         : { startedAt: now, count: 0 };
       window.count += 1;
       requestCounts.set(clientKey, window);
+      if (requestCounts.size > 1000) {
+        for (const [key, val] of requestCounts) {
+          if (now - val.startedAt > rateLimit.windowMs * 2) requestCounts.delete(key);
+        }
+      }
       if (window.count > rateLimit.maxRequests) {
         const retryAfter = Math.max(
           1,
@@ -866,8 +872,8 @@ export async function startViewer({
           send(
             response,
             error.statusCode || 400,
-            securityHeaders("text/html; charset=utf-8"),
-            method === "HEAD" ? "" : `<div class="error">Invalid receipt: ${error.message}</div>`,
+            securityHeaders("text/plain; charset=utf-8"),
+            `Invalid receipt: ${error.message}`,
           );
           return;
         }

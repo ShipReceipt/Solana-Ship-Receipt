@@ -4,6 +4,8 @@ node_modules/
 *.signed.json
 ship-receipt.json
 ship-receipt.html
+first.receipt.json
+sample.receipt.json
 reviewer-bundle/
 reviewer-bundle-*/
 coverage/

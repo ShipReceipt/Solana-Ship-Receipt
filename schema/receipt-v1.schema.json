@@ -61,10 +61,19 @@
               "minLength": 32,
               "maxLength": 44,
               "pattern": "^[1-9A-HJ-NP-Za-km-z]+$"
+            },
+            "memo": {
+              "type": "string",
+              "maxLength": 256
             }
           }
         },
         "demoUrl": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^https?://"
+        },
+        "verifiedBuildUrl": {
           "type": "string",
           "maxLength": 2048,
           "pattern": "^https?://"
