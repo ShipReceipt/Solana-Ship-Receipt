@@ -356,7 +356,7 @@ export async function startViewer({
             <span>Validates the optional Ed25519 attestation when a builder includes wallet proof of ownership.</span>
           </div>
         </div>
-        <form method="post" action="/api/verify" accept-charset="utf-8">
+        <form method="post" action="/review" accept-charset="utf-8">
           <label for="receipt">Receipt JSON</label>
           <textarea id="receipt" name="receipt" placeholder="Paste your receipt JSON here...&#10;&#10;{&#10;  &quot;version&quot;: 1,&#10;  &quot;payload&quot;: { ... },&#10;  &quot;receiptHash&quot;: &quot;...&quot;&#10;}"></textarea>
           <div class="button-row">
@@ -476,6 +476,8 @@ export async function startViewer({
                 formValues.transactionSignature || formValues.tx,
               programId: formValues.programId || formValues.program,
               demoUrl: formValues.demoUrl || formValues.demo,
+              verifiedBuildUrl:
+                formValues.verifiedBuildUrl || formValues.verifiedBuild || "",
             });
             envelopeCandidate = createEnvelope(payload);
           } else if (contentType.includes("multipart/form-data")) {

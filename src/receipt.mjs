@@ -1204,7 +1204,7 @@ td pre{margin:.4rem 0 0;padding:.6rem .8rem;background:var(--bg);border:1px soli
 footer{padding:1.25rem 2rem;border-top:1px solid var(--border);color:var(--muted);font-size:.85rem;font-style:italic}
 @media(max-width:720px){.hero{padding:1.5rem}.hero h1{font-size:2.25rem}.eyebrow{flex-direction:column;align-items:flex-start}.content{padding:1.5rem}.evidence{grid-template-columns:1fr}.page{width:calc(100% - 1rem);margin:.5rem auto}footer{padding:1.25rem 1.5rem}}
 @media(print){:root{--bg:#fff;--surface:#fff;--surface-muted:#f7f9f8;--text:#10231d;--muted:#5d6d67;--border:#d7e0dc;--green:#0a7a55;--purple:#075d42;--verified:#08734f;--verified-bg:#e7f7f0;--warning:#865900;--warning-bg:#fff4cf;--failed:#b42318;--failed-bg:#feeceb;--unchecked:#59666f;--unchecked-bg:#edf1f3;--shadow:none}.receipt{box-shadow:none;backdrop-filter:none}.receipt::before{display:none}.hero h1{background:none;color:var(--text)}.evidence div:hover{transform:none;border-color:var(--border)}}
-</style></style>
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Skip to receipt</a>
