@@ -288,7 +288,7 @@ export async function startViewer({
         <div class="step"><span class="step-num">2</span><strong>Add evidence</strong><span>Optional: demo URL, verified build, transaction signature.</span></div>
         <div class="step"><span class="step-num">3</span><strong>Sign &amp; share</strong><span>Wallet signing and memo anchoring happen locally after creation.</span></div>
       </div>
-      <form method="post" action="/" accept-charset="utf-8">
+      <form method="post" action="/" accept-charset="utf-8" enctype="multipart/form-data">
         <div class="fields">
           <div class="field wide"><label for="project-title">Project title <span class="optional">(required)</span></label><input id="project-title" name="projectTitle" required minlength="3" maxlength="120" placeholder="e.g. Metaplex Token Metadata"></div>
           <div class="field wide"><label for="project-description">Description <span class="optional">(required)</span></label><textarea id="project-description" name="projectDescription" required minlength="10" maxlength="1000" placeholder="Brief description of what this project does..."></textarea></div>

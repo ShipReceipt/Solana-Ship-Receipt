@@ -1,25 +1,34 @@
 # Solana Ship Receipt
 
-> A portable, tamper-evident build receipt for Solana project submissions.
+A dependency-free, tamper-evident build receipt for Solana project submissions.
 
-Solana Ship Receipt is a dependency-free Node.js CLI that binds a project
-submission to an exact Git commit and, when supplied, supporting Solana, demo,
-and wallet evidence. It produces machine-readable verification results and a
-standalone HTML receipt that a reviewer can inspect without opening the
-project's working tree.
+Solana Ship Receipt binds a project submission to an exact Git commit and,
+when supplied, supporting Solana, demo, and wallet evidence. It produces
+machine-readable verification results and a standalone HTML receipt that a
+reviewer can inspect without opening the project's working tree.
 
 The verifier reports each assertion independently as `verified`, `warning`,
-`failed`, or `not_checked`. It never turns missing evidence into a successful
+`failed`, or `not_checked`. Missing evidence is never reported as a successful
 check.
 
-New to provenance receipts? Follow the step-by-step
-[Getting Started guide](docs/GETTING-STARTED.md). No wallet or Solana CLI is
-needed for the first run.
+## Live instance
+
+https://solana-ship-receipt.onrender.com/
+
+- `/` -- paste or upload a receipt JSON for verification
+- `/builder` -- create a receipt from project metadata
+- `/review` -- verify a receipt with structured status output
+- `/health` -- deployment health check
+- `/api/receipt` -- canonical receipt JSON
+- `/api/verification` -- verification result JSON
+- `/api/verify` -- POST endpoint for machine-readable verification
+
+The hosted instance is a read-only demonstration verifier. It does not sign
+receipts, store submissions, or prove project security.
 
 ## Quick start
 
-Requirements: Node.js 20 or newer and Git. These commands work in PowerShell,
-Command Prompt, macOS, and Linux terminals:
+Requirements: Node.js 20 or newer and Git.
 
 ```shell
 git clone https://github.com/ShipReceipt/Solana-Ship-Receipt.git
@@ -31,39 +40,50 @@ node src/cli.mjs render first.receipt.json --out first.receipt.html
 ```
 
 The verification should mark the receipt version, schema, and hash as
-`verified`. It will mark wallet attestation as `not_checked` because the sample
-is intentionally unsigned. Open `first.receipt.html` in any browser to see the
+`verified`. Wallet attestation is `not_checked` because the sample is
+intentionally unsigned. Open `first.receipt.html` in any browser to see the
 reviewer-facing result. The sample uses fixed metadata and a pinned public
 revision, so its receipt hash is deterministic.
 
-Check that the sample's pinned commit still exists on public GitHub:
+Verify with public network checks:
 
 ```shell
 node src/cli.mjs verify first.receipt.json --network
 ```
 
-Ready to use your own repository? The [Getting Started
-guide](docs/GETTING-STARTED.md#4-create-a-receipt-for-your-project) explains how
-to find the exact 40-character commit SHA, add optional Solana evidence, and
-prepare the final reviewer bundle.
+## Create a receipt for your project
 
-## Why this exists
+From your project's Git checkout, copy the immutable commit identifier:
 
-Project submissions often combine a repository link, deployment address,
-transaction, demo, and wallet identity without a durable record connecting
-them. Links move, branches advance, and screenshots are difficult to audit.
-
-A ship receipt creates a stable handoff:
-
-```text
-exact Git commit
-      +
-optional Solana / demo / wallet evidence
-      ↓
-canonical receipt + SHA-256 hash
-      ↓
-verification record + reviewer HTML + manifest
+```shell
+git rev-parse HEAD
 ```
+
+Then replace the placeholders in this cross-platform command:
+
+```shell
+node src/cli.mjs create \
+  --title "My Solana Project" \
+  --description "A concise description of the shipped build." \
+  --repo "https://github.com/OWNER/REPOSITORY" \
+  --commit "FULL_40_CHARACTER_COMMIT_SHA" \
+  --cluster devnet \
+  --out ship-receipt.json
+```
+
+Verify local integrity, then query public evidence:
+
+```shell
+node src/cli.mjs verify ship-receipt.json
+node src/cli.mjs verify ship-receipt.json --network
+```
+
+Optional evidence flags: `--program`, `--tx`, `--demo`, `--rpc`,
+`--verified-build-url`, `--memo`. Omitted evidence is reported as
+`not_checked`. Any failed check produces a non-zero exit status.
+
+Generated files are write-once by default. Choose a new output path for each
+evidence revision.
 
 ## What it verifies
 
@@ -73,8 +93,10 @@ verification record + reviewer HTML + manifest
 | Receipt integrity | SHA-256 hash of the canonical payload |
 | GitHub revision | Exact 40-character commit resolves in the public repository |
 | Solana state | Transaction succeeds or the supplied program account is executable |
+| Verified build | CI workflow endpoint responds with HTTP 200 |
 | Demo URL | Public endpoint responds after bounded, revalidated redirects |
 | Wallet attestation | Domain-separated Ed25519 signature is valid |
+| Memo anchor | On-chain memo matches the canonical payload hash |
 
 These checks establish provenance and point-in-time availability. They do not
 establish code quality, repository ownership, program safety, or endorsement.
@@ -92,33 +114,22 @@ Only `failed` makes the verification result fail and produces a non-zero exit
 status. Warnings and unchecked optional evidence remain visible in every
 human- and machine-readable result.
 
-## Create a receipt for your project
+## Add a wallet attestation
 
-From your project's Git checkout, copy the immutable commit identifier:
-
-```shell
-git rev-parse HEAD
-```
-
-Then replace the placeholders in this cross-platform command:
-
-```shell
-node src/cli.mjs create --title "My Solana Project" --description "A concise description of the shipped build." --repo "https://github.com/OWNER/REPOSITORY" --commit "FULL_40_CHARACTER_COMMIT_SHA" --cluster devnet --out ship-receipt.json
-```
-
-Verify local integrity first, then query public evidence:
+Wallet signing is optional and runs locally. The CLI reads a Solana CLI keypair
+only for the signing operation; it does not print, embed, or upload private-key
+material.
 
 ```shell
 node src/cli.mjs verify ship-receipt.json
-node src/cli.mjs verify ship-receipt.json --network
+node src/cli.mjs sign ship-receipt.json --keypair "$HOME/.config/solana/id.json"
+node src/cli.mjs verify ship-receipt.signed.json
 ```
 
-`--program`, `--tx`, and `--demo` add optional public evidence. Use `--rpc` to
-select a custom public RPC endpoint. Omitted optional evidence is reported as
-`not_checked`, and any failed check produces a non-zero exit status.
-
-Generated files are write-once by default. Choose a new output path for each
-evidence revision rather than replacing an existing receipt.
+The default output is `ship-receipt.signed.json`. The unsigned source is
+preserved, and signing refuses to replace either the source receipt or an
+existing signed artifact. Signatures use Ed25519 with the
+`solana-ship-receipt/v1` domain-separation context.
 
 ## Create a reviewer bundle
 
@@ -133,10 +144,10 @@ The generated directory contains:
 
 ```text
 reviewer-bundle/
-├── manifest.json       # SHA-256 allowlist for generated artifacts
-├── receipt.html        # standalone human-readable receipt
-├── receipt.json        # canonical source receipt
-└── verification.json   # point-in-time verification result
+  manifest.json       SHA-256 allowlist for generated artifacts
+  receipt.html        standalone human-readable receipt
+  receipt.json        canonical source receipt
+  verification.json   point-in-time verification result
 ```
 
 `bundle` refuses an existing output directory, preventing prior reviewer
@@ -144,72 +155,24 @@ evidence from being silently replaced. `audit` works offline: it verifies the
 manifest, artifact hashes, receipt envelope, and verification record without
 rerunning public network checks.
 
-The versioned receipt contract is documented in
-[`schema/receipt-v1.schema.json`](schema/receipt-v1.schema.json).
-
 ## Render or serve a receipt
-
-The hosted reviewer is available at
-[solana-ship-receipt.onrender.com](https://solana-ship-receipt.onrender.com/).
-Open `/review` to verify a receipt without installing the CLI. The hosted
-instance is a read-only demonstration verifier; it does not sign receipts,
-store submissions, or prove project security.
-Use `/builder` to create a receipt from project metadata and optional public
-evidence. Wallet signing and Memo submission remain local builder operations.
-
-Deployments are triggered manually through the GitHub Actions workflow after
-the test suite passes. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the
-required protected Render deploy-hook secret and rollback procedure.
 
 Render a standalone HTML document:
 
-```powershell
+```shell
 node src/cli.mjs render ship-receipt.json --out ship-receipt.html
 ```
 
-Or start the read-only local viewer:
+Start the read-only local viewer:
 
-```powershell
+```shell
 node src/cli.mjs serve ship-receipt.json
 node src/cli.mjs serve ship-receipt.json --network --port 8787
 ```
 
-The default viewer binds only to `127.0.0.1` and exposes:
-
-- `/` — reviewer HTML
-- `/review` — hosted receipt verification page
-- `/health` — lightweight deployment health response
-- `/api/receipt` — canonical receipt JSON
-- `/api/verification` — verification result JSON
-- `/api/verify` — POST endpoint that accepts a receipt JSON and returns the verification result
-
-Only `GET`, `HEAD`, and the explicit verification `POST` are accepted. Public hosting is intentionally disabled by default and requires an explicit opt-in such as `--host 0.0.0.0 --public` after the release gate in `docs/THREAT-MODEL.md` is satisfied. Responses disable caching, framing, unneeded browser capabilities, and cross-origin resource use through explicit security headers.
-
-## Add a wallet attestation
-
-Wallet signing is optional and runs locally. The CLI reads a Solana CLI keypair
-only for the signing operation; it does not print, embed, or upload private-key
-material.
-
-Verify before signing:
-
-```powershell
-node src/cli.mjs verify ship-receipt.json
-```
-
-Create a signed sibling receipt:
-
-```powershell
-node src/cli.mjs sign ship-receipt.json `
-  --keypair "$env:USERPROFILE\.config\solana\id.json"
-
-node src/cli.mjs verify ship-receipt.signed.json
-```
-
-The default output is `ship-receipt.signed.json`. The unsigned source is
-preserved, and signing refuses to replace either the source receipt or an
-existing signed artifact. Signatures use Ed25519 with the
-`solana-ship-receipt/v1` domain-separation context.
+The default viewer binds only to `127.0.0.1`. Public hosting requires explicit
+opt-in: `--host 0.0.0.0 --public`. See `docs/DEPLOYMENT.md` for the release
+gate and operational requirements.
 
 ## CLI reference
 
@@ -218,7 +181,7 @@ create   --title T --description D --repo URL --commit SHA [options]
 sign     RECEIPT.json --keypair PATH [--out PATH]
 verify   RECEIPT.json [--network] [--json]
 render   RECEIPT.json [--out PATH] [--network]
-serve    RECEIPT.json [--port PORT] [--network]
+serve    RECEIPT.json [--port PORT] [--network] [--host HOST] [--public]
 bundle   RECEIPT.json --out-dir DIR [--network]
 audit    BUNDLE_DIR [--json]
 sample   [--out PATH]
@@ -227,38 +190,54 @@ sample   [--out PATH]
 Run `node src/cli.mjs --help` for the current command summary. Unknown options
 fail explicitly instead of being ignored.
 
-## Automation and agent workflows
+## Security model
 
-The [Verify Ship Receipt workflow](.github/workflows/verify-receipt.yml) runs
-`npm ci` and the test suite, creates a receipt from pinned inputs, performs
-local and public verification, builds and audits a reviewer bundle, and uploads
-the evidence as a GitHub Actions artifact. It never handles a private key.
+Network verification is read-only. Outbound URLs must use HTTP(S), cannot
+contain credentials, and cannot resolve to loopback, private, link-local, or
+reserved destinations. Demo redirects are bounded and revalidated at every hop.
+JSON responses are capped at 256 KiB and demo response bodies are not retained.
+Rendered HTML escapes receipt-controlled values and executes no scripts.
 
-The repo-local
-[`solana-ship-receipt` skill](skills/solana-ship-receipt/SKILL.md) guides Codex
-or Claude through the same test-first, local-first workflow while preserving
-existing artifacts and reporting unchecked evidence accurately.
+Limitations:
+
+- A valid receipt does not mean the referenced code is safe.
+- A wallet signature proves control of the signing key, not repository or
+  project ownership.
+- A Solana RPC response is evidence from that endpoint, not an independent
+  consensus proof.
+- A verification timestamp records when checks ran; it does not guarantee
+  future availability.
+- The included server is a read-only verifier deployed publicly for
+  demonstration. Production operation requires the controls in
+  `docs/DEPLOYMENT.md`.
+
+See the full threat model at `docs/THREAT-MODEL.md` before deploying any hosted
+service.
 
 ## Fixtures and testing
 
 `fixtures/public-projects/` contains deterministic receipts pinned to public
-revisions of Metaplex Token Metadata, Solana Program Library, Solana Memo,
-Associated Token Account, and Solana Token Program. All five fixtures include
-known devnet executable program accounts.
-Offline tests validate their receipt integrity; public network checks remain
-separate because third-party APIs and RPC services may be temporarily
-unavailable.
+revisions of six Solana projects:
 
-```powershell
+- Metaplex Token Metadata
+- Solana Program Library
+- Solana Memo
+- Associated Token Account
+- Solana Token Program
+- Solana Ship Receipt (self-referential)
+
+All fixtures include known devnet executable program accounts and produce
+9/9 verified checks against the self-referential receipt.
+
+```shell
 npm test
 npm run test:coverage
 ```
 
 The suite covers canonicalization, tamper detection, Ed25519 signing, strict
 versioning, Solana address validation, SSRF defenses, redirect handling,
-machine-readable output, the local viewer, reviewer bundles, offline audit, and
-artifact overwrite protection. `npm run test:coverage` adds Node's built-in
-line, branch, and function coverage report.
+machine-readable output, the local viewer, reviewer bundles, offline audit,
+artifact overwrite protection, and fixture network verification.
 
 ## Repository layout
 
@@ -268,56 +247,41 @@ line, branch, and function coverage report.
 | `src/cli.mjs` | Dependency-free command-line interface |
 | `src/viewer.mjs` | Loopback-only read-only HTTP viewer |
 | `src/bundle.mjs` | Reviewer bundle generation and offline auditing |
+| `src/base58.mjs` | Base58 encode/decode for Solana key material |
 | `schema/` | Versioned JSON Schema contract |
 | `fixtures/` | Pinned public receipts used by tests |
 | `skills/` | Repo-local Codex and Claude workflow skill |
-| `docs/` | Beginner guide, delivery milestones, and threat model |
-| `test/` | Deterministic unit, security, CLI, viewer, and bundle tests |
-| `.github/workflows/` | Cross-version CI and manual receipt verification |
+| `docs/` | Beginner guide, milestones, deployment, and threat model |
+| `test/` | Unit, security, CLI, viewer, and bundle tests |
+| `.github/workflows/` | Cross-version CI, receipt verification, and fixture checks |
 
-## Security model and limitations
+## Automation and agent workflows
 
-Network verification is read-only. Outbound URLs must use HTTP(S), cannot
-contain credentials, and cannot resolve to loopback, private, link-local, or
-reserved destinations. Demo redirects are bounded and revalidated at every
-hop. JSON responses are capped at 256 KiB and demo response bodies are not
-retained. Rendered HTML escapes receipt-controlled values and executes no
-scripts.
+The verify-receipt workflow runs `npm ci` and the test suite, creates a receipt
+from pinned inputs, performs local and public verification, builds and audits a
+reviewer bundle, and uploads the evidence as a GitHub Actions artifact. It never
+handles a private key.
 
-Important limitations:
+The verify-fixtures workflow runs weekly to confirm all six fixture receipts
+remain verifiable against live Solana infrastructure.
 
-- A valid receipt does not mean the referenced code is safe.
-- A wallet signature proves control of the signing key, not repository or
-  project ownership.
-- A Solana RPC response is evidence from that endpoint, not an independent
-  consensus proof.
-- A verification timestamp records when checks ran; it does not guarantee
-  future availability.
-- The included server is a read-only verifier and is deployed publicly for
-  demonstration at the Render URL above. Production operation still requires
-  the additional controls in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
-
-See the full [threat model](docs/THREAT-MODEL.md) before deploying any hosted
-service.
+The repo-local `solana-ship-receipt` skill guides Codex or Claude through the
+same test-first, local-first workflow while preserving existing artifacts and
+reporting unchecked evidence accurately.
 
 ## Project status
 
 This repository contains the MVP: receipt schema, CLI, verifier, wallet
-attestation, public evidence checks, HTML renderer, loopback viewer, hosted
-reviewer, reviewer bundle, offline auditor, fixtures, GitHub Actions workflow,
-and agent skill. The hosted Render instance is available for review; a
-production rollback process remains release-hardening work. The verifier
-enforces request-size, rate, and concurrency limits and emits structured
-request logs without receipt contents.
+attestation, public evidence checks (GitHub, Solana RPC, demo, verified build),
+HTML renderer, loopback viewer, hosted reviewer, reviewer bundle, offline
+auditor, six fixtures, GitHub Actions workflows, and agent skill. The hosted
+Render instance is available for review.
 
-Delivery goals and acceptance criteria are tracked in
-[`docs/MILESTONES.md`](docs/MILESTONES.md).
-The builder and reviewer session protocol is documented in
-[`docs/USER-TESTING.md`](docs/USER-TESTING.md).
-
-Contribution and vulnerability-reporting procedures are documented in
-[`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).
+Delivery goals and acceptance criteria are tracked in `docs/MILESTONES.md`.
+Builder and reviewer testing protocol is documented in `docs/USER-TESTING.md`.
+Contribution and vulnerability-reporting procedures are in `CONTRIBUTING.md`
+and `SECURITY.md`.
 
 ## License
 
-[MIT](LICENSE)
+MIT
