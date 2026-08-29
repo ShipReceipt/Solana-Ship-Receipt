@@ -626,7 +626,7 @@ export async function signEnvelope(envelope, keypairPath) {
   } catch (error) {
     throw new Error(`Refusing to sign: ${error.message}`);
   }
-  if (!envelope?.payload || envelope.receiptHash !== sha256(envelope.payload)) {
+  if (!envelope?.payload || envelope.receiptHash !== sha256(hashablePayload(envelope.payload))) {
     throw new Error(
       "Refusing to sign: receipt hash does not match the canonical payload",
     );
@@ -743,7 +743,7 @@ async function fetchJson(url, init = {}, timeoutMs = 10000, fetchImpl = fetch) {
 export async function verifyNetwork(envelope, options = {}) {
   validatePayload(envelope?.payload);
   validateEnvelopeShape(envelope);
-  if (envelope.receiptHash !== sha256(envelope.payload))
+  if (envelope.receiptHash !== sha256(hashablePayload(envelope.payload)))
     throw new Error("Network verification requires a valid local receipt hash");
   const checks = [];
   const payload = envelope.payload;
