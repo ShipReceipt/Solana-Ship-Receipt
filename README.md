@@ -29,8 +29,13 @@ receipts, store submissions, or prove project security.
 ## Quick verification
 
 To test the hosted verifier, open https://solana-ship-receipt.onrender.com/review
-and paste the following self-referential receipt. It produces 9/9 verified
-checks against live Solana infrastructure:
+and paste any of the following receipts. Each produces 9/9 verified checks
+against live Solana infrastructure.
+
+### Solana Ship Receipt (self-referential)
+
+This receipt verifies itself -- the hosted instance is the project, the CI
+workflow is the verified build, and the demo URL points back to the verifier.
 
 ```json
 {
@@ -57,6 +62,105 @@ checks against live Solana infrastructure:
   "attestation": {
     "publicKey": "B7BcGPwvLuMkXJaah54kt8XTvCJDNi31ad3ZyJE9DSDd",
     "signature": "5puHS6bNBR3cwWD8aYKsPDFtJgkwpHQKyrwRbMn89vwDNeQDyqm494bDiSgQuqjynhwxbVURyDkS7yk3syAtfVBJ",
+    "algorithm": "Ed25519",
+    "context": "solana-ship-receipt/v1"
+  }
+}
+```
+
+### Metaplex Token Metadata
+
+```json
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Metaplex Token Metadata",
+    "projectDescription": "A public Metaplex Token Metadata fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/metaplex-foundation/mpl-token-metadata",
+      "commit": "349e061053c6fc5b6b815e03e896e4db57012893"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s",
+      "memo": "f6574fbbb891ff3439ce5605d4b8698a227791f78fbe2290bf1818b90b05ef96"
+    },
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000002",
+    "demoUrl": "https://developers.metaplex.com/token-metadata",
+    "verifiedBuildUrl": "https://github.com/metaplex-foundation/mpl-token-metadata/actions"
+  },
+  "receiptHash": "f6574fbbb891ff3439ce5605d4b8698a227791f78fbe2290bf1818b90b05ef96",
+  "attestation": {
+    "publicKey": "dW1t7BAGwRMnNzitFVq43zLxgrQdYfvHWuF6mFkr9DA",
+    "signature": "727yHCVvwVerFipFU3oG3SheEgqeZ5zgRvTcdubMuWFML9KX8psdCrursk96VoMuhKgzt6vnknTrBAR9n8vjJhP",
+    "algorithm": "Ed25519",
+    "context": "solana-ship-receipt/v1"
+  }
+}
+```
+
+### Solana Program Library (Token)
+
+```json
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Solana Program Library",
+    "projectDescription": "A public Solana Program Library fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/solana-labs/solana-program-library",
+      "commit": "264ca72de06b0c2b45c0b15d298000fe3f82db2e"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "memo": "3201f9588da899065868d1483182aeac42a9cfe56308e6d3261569efbdaa2082"
+    },
+    "createdAt": "2026-08-23T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000003",
+    "demoUrl": "https://www.solana-program.com/docs/token",
+    "verifiedBuildUrl": "https://github.com/solana-labs/solana-program-library/actions"
+  },
+  "receiptHash": "3201f9588da899065868d1483182aeac42a9cfe56308e6d3261569efbdaa2082",
+  "attestation": {
+    "publicKey": "dW1t7BAGwRMnNzitFVq43zLxgrQdYfvHWuF6mFkr9DA",
+    "signature": "3Gw7zC8EGGuLrbZ6yNDQq7w4tEiPtLkxAQy8MZosdvDinZ4g77XoJa4o6sjj72MfcJVbvhDo12FwqNg8EVvibVxi",
+    "algorithm": "Ed25519",
+    "context": "solana-ship-receipt/v1"
+  }
+}
+```
+
+### Associated Token Account
+
+```json
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Associated Token Account Program",
+    "projectDescription": "A public Solana Associated Token Account program fixture pinned to an exact repository revision and devnet program.",
+    "repository": {
+      "url": "https://github.com/solana-program/associated-token-account",
+      "commit": "c0c821e7792054c1034ff368f33cc593ccdb425e"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+      "memo": "4a2cea421e5864943070e6d050813bf420e742db98f5286d0c8ebeda2c517641"
+    },
+    "createdAt": "2026-08-28T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000004",
+    "demoUrl": "https://www.solana-program.com/docs/associated-token-account",
+    "verifiedBuildUrl": "https://github.com/solana-program/associated-token-account/actions"
+  },
+  "receiptHash": "4a2cea421e5864943070e6d050813bf420e742db98f5286d0c8ebeda2c517641",
+  "attestation": {
+    "publicKey": "dW1t7BAGwRMnNzitFVq43zLxgrQdYfvHWuF6mFkr9DA",
+    "signature": "4hy3P7dKCYWyudxkAL8s2p33yeBPsKN2XDK5zt5j8ZYegwN1NGTDnEXSjDkERFE1rMzEjhFFskSNfELovPnZiYEv",
     "algorithm": "Ed25519",
     "context": "solana-ship-receipt/v1"
   }
