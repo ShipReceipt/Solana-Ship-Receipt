@@ -24,6 +24,18 @@ function securityHeaders(contentType) {
   };
 }
 
+function extractEnvelope(parsed, rawBody, contentType) {
+  if (contentType.includes("application/x-www-form-urlencoded") || contentType.includes("multipart/form-data")) {
+    const receiptStr = parsed?.receipt || parsed?.["receipt-file"];
+    if (receiptStr && typeof receiptStr === "string") {
+      try { return JSON.parse(receiptStr); } catch { /* fall through */ }
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && !parsed.receipt) return parsed;
+  }
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+  return JSON.parse(rawBody || "{}");
+}
+
 function parseRequestBody(rawBody, contentType) {
   if (!rawBody) return {};
   const type = contentType || "";
@@ -545,10 +557,7 @@ export async function startViewer({
           const rawBody = await readRequestBody(request);
           const contentType = request.headers["content-type"] || "";
           const parsed = parseRequestBody(rawBody, contentType);
-          const submitEnvelope =
-            parsed && typeof parsed === "object" && !Array.isArray(parsed)
-              ? parsed
-              : JSON.parse(rawBody || "{}");
+          const submitEnvelope = extractEnvelope(parsed, rawBody, contentType);
           const verificationResult = await verifySubmittedEnvelope(submitEnvelope);
           request.verificationOutcome = verificationResult.passed ? "passed" : "failed";
           const schemaCheck = verificationResult.checks.find(
@@ -641,9 +650,7 @@ export async function startViewer({
         const rawBody = await readRequestBody(request);
         const contentType = request.headers["content-type"] || "";
         const parsed = parseRequestBody(rawBody, contentType);
-        const submitEnvelope = parsed && typeof parsed === "object" && !Array.isArray(parsed)
-          ? parsed
-          : JSON.parse(rawBody || "{}");
+        const submitEnvelope = extractEnvelope(parsed, rawBody, contentType);
         const verificationResult = await verifySubmittedEnvelope(submitEnvelope);
         request.verificationOutcome = verificationResult.passed ? "passed" : "failed";
         const schemaCheck = verificationResult.checks.find(
