@@ -26,6 +26,46 @@ https://solana-ship-receipt.onrender.com/
 The hosted instance is a read-only demonstration verifier. It does not sign
 receipts, store submissions, or prove project security.
 
+## Quick verification
+
+To test the hosted verifier, open https://solana-ship-receipt.onrender.com/review
+and paste the following self-referential receipt. It produces 9/9 verified
+checks against live Solana infrastructure:
+
+```json
+{
+  "version": 1,
+  "payload": {
+    "projectTitle": "Solana Ship Receipt",
+    "projectDescription": "A portable, tamper-evident build receipt for Solana project submissions.",
+    "repository": {
+      "url": "https://github.com/ShipReceipt/Solana-Ship-Receipt",
+      "commit": "de9bdb5183f387cfc8af271c0d5e122be4419581"
+    },
+    "solana": {
+      "cluster": "devnet",
+      "rpcUrl": "https://api.devnet.solana.com",
+      "programId": "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr",
+      "memo": "51ad1d39b96deac253df7c28f7b57521258fb6e8d557809559df608411736635"
+    },
+    "demoUrl": "https://solana-ship-receipt.onrender.com",
+    "verifiedBuildUrl": "https://github.com/ShipReceipt/Solana-Ship-Receipt/actions/workflows/ci.yml",
+    "createdAt": "2026-08-29T00:00:00.000Z",
+    "receiptId": "00000000-0000-4000-8000-000000000006"
+  },
+  "receiptHash": "51ad1d39b96deac253df7c28f7b57521258fb6e8d557809559df608411736635",
+  "attestation": {
+    "publicKey": "B7BcGPwvLuMkXJaah54kt8XTvCJDNi31ad3ZyJE9DSDd",
+    "signature": "5puHS6bNBR3cwWD8aYKsPDFtJgkwpHQKyrwRbMn89vwDNeQDyqm494bDiSgQuqjynhwxbVURyDkS7yk3syAtfVBJ",
+    "algorithm": "Ed25519",
+    "context": "solana-ship-receipt/v1"
+  }
+}
+```
+
+Alternatively, open https://solana-ship-receipt.onrender.com/ and click
+"Solana Ship Receipt" in the quick-start section to auto-populate and verify.
+
 ## Quick start
 
 Requirements: Node.js 20 or newer and Git.
